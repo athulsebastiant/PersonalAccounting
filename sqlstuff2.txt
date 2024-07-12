@@ -484,3 +484,12 @@ SELECT * from jrlList;
 END//
 
 DELIMITER ;
+
+
+
+
+Create Table users(userId int Auto_increment ,Firstname varchar(50) Not Null, LastName varchar(50) Not Null,Phone int Not Null,email varchar(254) Not Null, username varchar(12) Not Null, password varchar(20) Not Null, Primary Key(userId));
+
+
+uuds1dsa
+Tw56!asd
