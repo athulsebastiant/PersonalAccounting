@@ -5,7 +5,7 @@
     <meta charset="utf-8">
     <title>myRegistration</title>
     <link rel="stylesheet" href="styles.css">
-
+    <script src="scripts.js"></script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 </head>
 
@@ -15,7 +15,9 @@
         <h5>Instant access.</h5>
     </div>
     <div class="form-container">
-        <form method="post" action="register.php" class="registration-form">
+        <form action="register.php" class="registration-form" onsubmit="return validateIt(event)" method="post">
+
+
             <div class="input-group">
                 <input type="text" name="firstname" id="firstname" required="required" autofocus="autofocus" placeholder="First Name" onkeyup="validateName('firstname','firstname-message')">
                 <span id="firstname-message"></span>
@@ -32,12 +34,12 @@
                 <!--<label>Email</label>-->
             </div>
             <div class="input-group">
-                <input type="tel" name="phone" id="phone" required="required" autofocus="autofocus" placeholder="Phone" onkeyup="validatePhone()">
+                <input type="text" name="phone" id="phone" required="required" autofocus="autofocus" placeholder="Phone" onkeyup="validatePhone()">
                 <span id="phone-message" class="message"></span>
                 <!--<label>Email</label>-->
             </div>
             <div class="input-group">
-                <input type="text" name="username" id="username" required="required" autofocus="autofocus" placeholder="Username" onkeyup="validateUsername()">
+                <input type="text" name="username" id="username" required="required" autofocus="autofocus" placeholder="Username" onfocus="showUsernameConstraints()" onkeyup="validateUsername()">
                 <span id="username-message"></span>
                 <!--<label>Username</label>-->
             </div>
@@ -52,7 +54,11 @@
         </form>
 
     </div>
-    <script src="scripts.js"></script>
+
+
+
+
+
 </body>
 
 </html>
