@@ -81,7 +81,34 @@
     </div>
 
 
+    <script>
+        document.getElementById('loginForm').addEventListener('submit', function(event) {
+            event.preventDefault(); // Prevent the form from submitting the traditional way
 
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+
+            const xhr = new XMLHttpRequest();
+            xhr.open("POST", "login.php", true);
+            xhr.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+
+            xhr.onload = function() {
+                if (xhr.status === 200) {
+                    if (xhr.responseText == "Login successful!") {
+                        document.getElementById('message').style.color = 'green';
+                    } else {
+                        document.getElementById('message').style.color = 'red';
+                    }
+                    document.getElementById('message').innerText = xhr.responseText;
+
+                } else {
+                    document.getElementById('message').innerText = "An error occurred during the request.";
+                }
+            };
+
+            xhr.send("username=" + encodeURIComponent(username) + "&password=" + encodeURIComponent(password));
+        });
+    </script>
 
 
 

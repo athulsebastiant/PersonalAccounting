@@ -152,13 +152,7 @@ WHERE jd.EntryID = ?";
                 }
                 ?>
             </tbody>
-            <tfoot>
-                <tr>
-                    <td colspan="2">Total</td>
-                    <td><?php echo htmlspecialchars($total_debit); ?></td>
-                    <td><?php echo htmlspecialchars($total_credit); ?></td>
-                </tr>
-            </tfoot>
+
         </table>
     </div>
 
