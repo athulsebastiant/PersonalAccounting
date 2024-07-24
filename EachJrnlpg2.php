@@ -1,5 +1,5 @@
 <?php
-// Database connection details
+// Database configuration
 $servername = "localhost";
 $username = "root";
 $password = "";
@@ -13,68 +13,279 @@ if ($conn->connect_error) {
     die("Connection failed: " . $conn->connect_error);
 }
 
-// Get the EntryID from the query string or other source
-$entryId = 1; // Replace with your desired method to get EntryID
-
-// Fetch data from jrlmaster
-$sqlMaster = "SELECT description, jdate FROM jrlmaster WHERE EntryID = ?";
-$stmtMaster = $conn->prepare($sqlMaster);
-$stmtMaster->bind_param("i", $entryId);
-$stmtMaster->execute();
-$resultMaster = $stmtMaster->get_result();
-$rowMaster = $resultMaster->fetch_assoc();
-
-// Fetch data from jrldetailed
-$sqlDetailed = "SELECT jd.LineID, a.AccountNo, jd.description, jd.DebitAmount, jd.CreditAmount
-                FROM jrldetailed jd
-                INNER JOIN coa a ON jd.AccountID = a.AccountNo
-                WHERE jd.EntryID = ?";
-$stmtDetailed = $conn->prepare($sqlDetailed);
-$stmtDetailed->bind_param("i", $entryId);
-$stmtDetailed->execute();
-$resultDetailed = $stmtDetailed->get_result();
+// Fetch EntryID from query parameter
+if (isset($_GET['EntryID'])) {
+    // Retrieve the EntryID from the URL
+    $entry_id = $_GET['EntryID'];
+    // Fetch jrlmaster data
+    $sql_master = "SELECT EntryID, jdate, description FROM jrlmaster WHERE EntryID = ?";
+    $stmt_master = $conn->prepare($sql_master);
+    $stmt_master->bind_param("i", $entry_id);
+    $stmt_master->execute();
+    $result_master = $stmt_master->get_result();
+    $master_data = $result_master->fetch_assoc();
+    // Fetch jrldetailed and coa data
+    $sql_detail = "
+SELECT jd.AccountID, coa.AccountName, jd.description, jd.DebitAmount, jd.CreditAmount
+FROM jrldetailed jd
+JOIN coa ON jd.AccountID = coa.AccountNo
+WHERE jd.EntryID = ?";
+    $stmt_detail = $conn->prepare($sql_detail);
+    $stmt_detail->bind_param("i", $entry_id);
+    $stmt_detail->execute();
+    $result_detail = $stmt_detail->get_result();
+} else {
+    echo "No data found for EntryID: "; //. htmlspecialchars($entry_id);
+    $conn->close();
+    exit;
+}
 
 ?>
+
 <!DOCTYPE html>
-<html>
+<html lang="en">
 
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        .journal-container {
+            max-width: 100%;
+            border: 1px solid #ddd;
+            padding: 20px;
+            margin: 20px auto;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            overflow-x: auto;
+            /* Ensure the container itself handles any overflow */
+        }
+
+        .journal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            flex-wrap: wrap;
+            /* Allows elements to wrap to the next line if needed */
+        }
+
+        .journal-header h1 {
+            margin: 0;
+            font-size: 1.5em;
+            font-weight: bold;
+            flex: 1 1 auto;
+            /* Allow the header to take available space */
+        }
+
+        .journal-header .date {
+            font-size: 1em;
+            color: #888;
+            margin-top: 10px;
+            flex: 1 1 auto;
+            /* Allow the date to take available space */
+            text-align: right;
+            /* Align the date to the right */
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            overflow-x: auto;
+            /* Ensure the table itself handles any overflow */
+        }
+
+        thead {
+            background-color: #f2f2f2;
+        }
+
+        th,
+        td {
+            border: 1px solid #ddd;
+            padding: 8px;
+        }
+
+        th {
+            background-color: #e0e0e0;
+        }
+
+        tfoot td {
+            font-weight: bold;
+        }
+    </style>
     <title>Journal Entry Details</title>
 </head>
 
 <body>
-    <div>
-        <span style="font-weight: bold;"><?php echo $rowMaster['description']; ?></span>
-        <span style="float: right;"><?php echo $rowMaster['jdate']; ?></span>
+
+    <div class="journal-container">
+        <div class="journal-header">
+            <h1><?php echo htmlspecialchars($master_data['description']); ?></h1>
+            <div class="date"><?php echo htmlspecialchars($master_data['jdate']); ?></div>
+        </div>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Account</th>
+                    <th>Label</th>
+                    <th>Debit</th>
+                    <th>Credit</th>
+                </tr>
+            </thead>
+            <tbody>
+                <?php
+                $total_debit = 0;
+                $total_credit = 0;
+                while ($row = $result_detail->fetch_assoc()) {
+                    $total_debit += $row['DebitAmount'];
+                    $total_credit += $row['CreditAmount'];
+                    echo "<tr>
+                        <td>" . htmlspecialchars($row['AccountID']) . " - " . htmlspecialchars($row['AccountName']) . "</td>
+                        <td>" . htmlspecialchars($row['description']) . "</td>
+                        <td>" . htmlspecialchars($row['DebitAmount']) . "</td>
+                        <td>" . htmlspecialchars($row['CreditAmount']) . "</td>
+                      </tr>";
+                }
+                ?>
+            </tbody>
+            <tfoot>
+                <tr>
+                    <td colspan="2">Total</td>
+                    <td><?php echo htmlspecialchars($total_debit); ?></td>
+                    <td><?php echo htmlspecialchars($total_credit); ?></td>
+                </tr>
+            </tfoot>
+        </table>
     </div>
-    <table>
-        <thead>
-            <tr>
-                <th>Account</th>
-                <th>Label</th>
-                <th>Debit</th>
-                <th>Credit</th>
-            </tr>
-        </thead>
-        <tbody>
-            <?php
-            $totalDebit = 0;
-            $totalCredit = 0;
-            while ($rowDetailed = $resultDetailed->fetch_assoc()) {
-                $totalDebit += $rowDetailed['DebitAmount'];
-                $totalCredit += $rowDetailed['CreditAmount'];
-                echo "<tr>";
-                echo "<td>" . $rowDetailed['AccountID'] . "</td>";
-                echo "<td>" . $rowDetailed['description'] . "</td>";
-                echo "<td>" . number_format($rowDetailed['DebitAmount'], 2) . "</td>";
-                echo "<td>" . number_format($rowDetailed['CreditAmount'], 2) . "</td>";
-                echo "</tr>";
-            }
-            ?>
-        </tbody>
-    </table>
-    <p>Total Debit: <?php echo number_format($totalDebit, 2); ?></p>
-    <p>Total Credit: <?php echo number_format($totalCredit, 2); ?></p>
+
+    <?php
+    // Close the database connection
+    $conn->close();
+    ?>
+
 </body>
 
 </html>
+
+
+
+
+
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        .journal-container {
+            max-width: 100%;
+            border: 1px solid #ddd;
+            padding: 20px;
+            margin: 20px auto;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            overflow-x: auto;
+            /* Ensure the container itself handles any overflow */
+        }
+
+        .journal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            flex-wrap: wrap;
+            /* Allows elements to wrap to the next line if needed */
+        }
+
+        .journal-header h1 {
+            margin: 0;
+            font-size: 1.5em;
+            font-weight: bold;
+            flex: 1 1 auto;
+            /* Allow the header to take available space */
+        }
+
+        .journal-header .date {
+            font-size: 1em;
+            color: #888;
+            margin-top: 10px;
+            flex: 1 1 auto;
+            /* Allow the date to take available space */
+            text-align: right;
+            /* Align the date to the right */
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            overflow-x: auto;
+            /* Ensure the table itself handles any overflow */
+        }
+
+        thead {
+            background-color: #f2f2f2;
+        }
+
+        th,
+        td {
+            border: 1px solid #ddd;
+            padding: 8px;
+        }
+
+        th {
+            background-color: #e0e0e0;
+        }
+
+        tfoot td {
+            font-weight: bold;
+        }
+    </style>
+    <title>Journal Entry Details</title>
+</head>
+
+<body>
+
+    <div class="journal-container">
+        <div class="journal-header">
+            <?php if ($master_data) : ?>
+                <h1><?php echo htmlspecialchars($master_data['description']); ?></h1>
+                <div class="date"><?php echo htmlspecialchars($master_data['jdate']); ?></div>
+            <?php else : ?>
+                <h1>No data found</h1>
+            <?php endif; ?>
+        </div>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Account</th>
+                    <th>Label</th>
+                    <th>Debit</th>
+                    <th>Credit</th>
+                </tr>
+            </thead>
+            <tbody>
+                <?php
+                $total_debit = 0;
+                $total_credit = 0;
+                while ($row = $result_detail->fetch_assoc()) {
+                    $total_debit += $row['DebitAmount'];
+                    $total_credit += $row['CreditAmount'];
+                    echo "<tr>
+                        <td>" . htmlspecialchars($row['AccountID']) . " - " . htmlspecialchars($row['AccountName']) . "</td>
+                        <td>" . htmlspecialchars($row['description']) . "</td>
+                        <td>" . htmlspecialchars($row['DebitAmount']) . "</td>
+                        <td>" . htmlspecialchars($row['CreditAmount']) . "</td>
+                      </tr>";
+                }
+                ?>
+            </tbody>
+            <tfoot>
+                <tr>
+                    <td colspan="2">Total</td>
+                    <td><?php echo htmlspecialchars($total_debit); ?></td>
+                    <td><?php echo htmlspecialchars($total_credit); ?></td>
+                </tr>
+            </tfoot>
+        </table>
+    </div>

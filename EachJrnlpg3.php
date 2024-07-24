@@ -14,32 +14,32 @@ if ($conn->connect_error) {
 }
 
 // Fetch EntryID from query parameter
-$entry_id = 4;
+if (isset($_GET['EntryID'])) {
+    // Retrieve the EntryID from the URL
+    $entry_id = $_GET['EntryID'];
 
-// Fetch jrlmaster data
-$sql_master = "SELECT EntryID, jdate, description FROM jrlmaster WHERE EntryID = ?";
-$stmt_master = $conn->prepare($sql_master);
-$stmt_master->bind_param("i", $entry_id);
-$stmt_master->execute();
-$result_master = $stmt_master->get_result();
-$master_data = $result_master->fetch_assoc();
-
-if (!$master_data) {
-    echo "No data found for EntryID: " . htmlspecialchars($entry_id);
-    $conn->close();
-    exit;
-}
-
-// Fetch jrldetailed and coa data
-$sql_detail = "
+    // Fetch jrlmaster data
+    $sql_master = "SELECT EntryID, jdate, description FROM jrlmaster WHERE EntryID = ?";
+    $stmt_master = $conn->prepare($sql_master);
+    $stmt_master->bind_param("i", $entry_id);
+    $stmt_master->execute();
+    $result_master = $stmt_master->get_result();
+    $master_data = $result_master->fetch_assoc();
+    // Fetch jrldetailed and coa data
+    $sql_detail = "
 SELECT jd.AccountID, coa.AccountName, jd.description, jd.DebitAmount, jd.CreditAmount
 FROM jrldetailed jd
 JOIN coa ON jd.AccountID = coa.AccountNo
 WHERE jd.EntryID = ?";
-$stmt_detail = $conn->prepare($sql_detail);
-$stmt_detail->bind_param("i", $entry_id);
-$stmt_detail->execute();
-$result_detail = $stmt_detail->get_result();
+    $stmt_detail = $conn->prepare($sql_detail);
+    $stmt_detail->bind_param("i", $entry_id);
+    $stmt_detail->execute();
+    $result_detail = $stmt_detail->get_result();
+} else {
+    echo "No data found for EntryID: "; //. htmlspecialchars($entry_id);
+    $conn->close();
+    exit;
+}
 
 ?>
 
@@ -119,8 +119,12 @@ $result_detail = $stmt_detail->get_result();
 
     <div class="journal-container">
         <div class="journal-header">
-            <h1><?php echo htmlspecialchars($master_data['description']); ?></h1>
-            <div class="date"><?php echo htmlspecialchars($master_data['jdate']); ?></div>
+            <?php if ($master_data) : ?>
+                <h1><?php echo htmlspecialchars($master_data['description']); ?></h1>
+                <div class="date"><?php echo htmlspecialchars($master_data['jdate']); ?></div>
+            <?php else : ?>
+                <h1>No data found</h1>
+            <?php endif; ?>
         </div>
 
         <table>
