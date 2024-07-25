@@ -72,12 +72,34 @@
             color: blue;
             text-decoration: underline;
         }
+
+        .button-container {
+            text-align: left;
+            /* Center the button horizontally */
+        }
+
+        .button-container button {
+            background-color: #4CAF50;
+            /* Green color for the button */
+            color: white;
+            /* White text color for the button */
+            border: none;
+            /* Remove default border for the button */
+            padding: 10px 20px;
+            /* Add padding inside the button */
+            font-size: 16px;
+            /* Set font size for the button text */
+            cursor: pointer;
+            /* Indicate clickable behavior */
+        }
     </style>
     <title>Journal Entry Details</title>
 </head>
 
 <body>
-
+    <div class="button-container">
+        <button type="submit" value="Post">Post</button>
+    </div>
     <div class="journal-container">
         <div class="journal-header">
             <h1>Journal Entry Details</h1>
@@ -103,33 +125,146 @@
 
     <script>
         function addNewRow(element) {
-            const table = document.getElementById('journalTable').getElementsByTagName('tbody')[0];
-            const lastRow = table.rows[table.rows.length - 2]; // Get the last row before the "Enter line" row
+            const table = document.getElementById('journalTable');
+            const tbody = table.querySelector('tbody');
+            const currentRow = element.parentNode;
 
-            if (lastRow && lastRow.cells[0].innerText.trim() === '') {
-                alert('Please fill in the first cell of the current row before adding a new row.');
-                return;
-            }
-
-            const newRow = table.insertRow(table.rows.length - 1);
-
-            for (let i = 0; i < 4; i++) {
-                const newCell = newRow.insertCell(i);
-                newCell.contentEditable = true;
-                newCell.classList.add('editable');
-            }
-
-            element.innerHTML = '';
+            // Remove the "Enter line" text and onclick attribute
+            element.textContent = '';
             element.removeAttribute('onclick');
+            element.classList.remove('enter-line');
 
-            const newEnterLineRow = table.insertRow();
-            const newEnterLineCell = newEnterLineRow.insertCell(0);
-            newEnterLineCell.colSpan = 4;
-            newEnterLineCell.classList.add('enter-line');
-            newEnterLineCell.innerHTML = 'Enter line';
-            newEnterLineCell.setAttribute('onclick', 'addNewRow(this)');
+            // Split the cell into four editable cells
+            currentRow.innerHTML = `
+        <td contenteditable="true" class="editable"></td>
+        <td contenteditable="true" class="editable"></td>
+        <td contenteditable="true" class="editable"></td>
+        <td contenteditable="true" class="editable"></td>
+    `;
+
+            // Add click event listener to the first cell
+            currentRow.cells[0].addEventListener('click', function() {
+                showDropdown(this);
+            });
+
+            // Add event listener to the first cell of the current row
+            currentRow.cells[0].addEventListener('input', function() {
+                if (this.textContent.trim() !== '') {
+                    addEnterLine();
+                } else {
+                    removeEnterLine();
+                }
+            });
+        }
+
+        function addEnterLine() {
+            const table = document.getElementById('journalTable');
+            const tbody = table.querySelector('tbody');
+
+            // Check if there's already an "Enter line" row
+            const existingEnterLine = tbody.querySelector('.enter-line');
+            if (existingEnterLine) {
+                return; // Don't add another "Enter line" if one already exists
+            }
+
+            const newRow = tbody.insertRow();
+            const newCell = newRow.insertCell();
+            newCell.colSpan = 4;
+            newCell.className = 'enter-line';
+            newCell.textContent = 'Enter line';
+            newCell.onclick = function() {
+                addNewRow(this);
+            };
+        }
+
+        function removeEnterLine() {
+            const table = document.getElementById('journalTable');
+            const tbody = table.querySelector('tbody');
+            const enterLineRow = tbody.querySelector('.enter-line');
+            if (enterLineRow) {
+                tbody.removeChild(enterLineRow);
+            }
+        }
+
+        // Initialize the first "Enter line" row
+        window.onload = function() {
+            const table = document.getElementById('journalTable');
+            const tbody = table.querySelector('tbody');
+            if (tbody.rows.length === 0) {
+                addEnterLine();
+            }
+
+            // Add click event listeners to existing first column cells
+            const firstColumnCells = tbody.querySelectorAll('tr td:first-child');
+            firstColumnCells.forEach(cell => {
+                cell.addEventListener('click', function() {
+                    showDropdown(this);
+                });
+            });
+        };
+
+        function showDropdown(element) {
+            // Only proceed if this is the first column
+            if (element.cellIndex !== 0) return;
+            if (element.querySelector('.account-dropdown')) return;
+            // Create a dropdown element
+            const dropdown = document.createElement('select');
+            dropdown.className = 'account-dropdown';
+
+            // Add a loading option
+            dropdown.innerHTML = '<option>Loading...</option>';
+
+            // Insert the dropdown into the cell
+            element.innerHTML = '';
+            element.appendChild(dropdown);
+
+            // Fetch data from PHP using AJAX
+            fetch('get_accounts.php')
+                .then(response => {
+                    console.log('Raw response:', response);
+                    return response.text(); // Change this to text() instead of json()
+                })
+                .then(text => {
+                    console.log('Response text:', text);
+                    // Try to parse the text as JSON
+                    try {
+                        const data = JSON.parse(text);
+                        console.log('Parsed data:', data);
+
+                        // Clear the dropdown
+                        dropdown.innerHTML = '';
+
+                        // Add a default option
+                        const defaultOption = document.createElement('option');
+                        defaultOption.text = 'Select an account';
+                        defaultOption.value = '';
+                        dropdown.add(defaultOption);
+
+                        // Add options from the fetched data
+                        data.forEach(account => {
+                            const option = document.createElement('option');
+                            option.text = account.name;
+                            option.value = account.id;
+                            dropdown.add(option);
+                        });
+                    } catch (e) {
+                        console.error('Error parsing JSON:', e);
+                        throw new Error('Invalid JSON response');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching accounts:', error);
+                    element.innerHTML = 'Error loading accounts';
+                });
+            // Handle selection
+            dropdown.addEventListener('change', function() {
+                element.innerHTML = this.options[this.selectedIndex].text;
+                element.dataset.accountId = this.value;
+            });
         }
     </script>
+
+
 
 </body>
 

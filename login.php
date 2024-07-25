@@ -1,19 +1,7 @@
 <?php
 session_start(); // Start the session to manage user sessions
 
-// Database connection details
-$servername = "localhost";
-$username = "root";  // replace with your MySQL username
-$password = "";  // replace with your MySQL password
-$dbname = "ac2";
-
-// Create connection
-$conn = new mysqli($servername, $username, $password, $dbname);
-
-// Check connection
-if ($conn->connect_error) {
-    die("Connection failed: " . $conn->connect_error);
-}
+include "connection.php";
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $input_username = $_POST['username'];
