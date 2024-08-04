@@ -53,6 +53,14 @@
             padding: 8px;
         }
 
+        input#description {
+
+            padding: 8px;
+            border-collapse: collapse;
+            margin-top: 20px;
+
+        }
+
         th {
             background-color: #e0e0e0;
         }
@@ -105,7 +113,7 @@
             <h1>Journal Entry Details</h1>
             <div class="date"><?php echo date("Y-m-d"); ?></div>
         </div>
-
+        <input type='text' id='description' name='description' placeholder="Journal Description" required>
         <table id="journalTable">
             <thead>
                 <tr>

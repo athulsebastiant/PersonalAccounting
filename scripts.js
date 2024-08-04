@@ -135,9 +135,9 @@ function checkExists(value, fieldType, messageElement) {
 
     xhr.onload = function () {
         if (this.status === 200) {
-            console.log(this.responseText);
+            //console.log(this.responseText);
             const response = JSON.parse(this.responseText);
-            console.log(this.responseText);
+            //console.log(this.responseText);
             if (response.exists) {
                 messageElement.textContent = fieldType + ' already exists';
                 messageElement.style.color = 'red';
