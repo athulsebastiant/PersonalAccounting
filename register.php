@@ -1,6 +1,6 @@
 <?php
 // Database connection
-include "connection.php";
+include "Connection.php";
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
@@ -12,7 +12,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     //$password = password_hash($_POST['password'], PASSWORD_DEFAULT); // hash the password for security
     $password = password_hash($_POST['password'], PASSWORD_ARGON2ID);
 
-    $sql = "INSERT INTO users2 (firstname, lastname, email, phone, username, password)
+    $sql = "INSERT INTO users2 (firstname, lastname, email, phone, username, `password`)
             VALUES ('$firstname', '$lastname', '$email', '$phone', '$username', '$password')";
 
     if ($conn->query($sql) === TRUE) {

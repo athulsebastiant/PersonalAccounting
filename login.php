@@ -8,7 +8,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $input_password = $_POST['password'];
 
     // Prepare and bind
-    $stmt = $conn->prepare("SELECT password FROM users WHERE username = ?");
+    $stmt = $conn->prepare("SELECT password FROM users2 WHERE username = ?");
     if (!$stmt) {
         die("Prepare failed: (" . $conn->errno . ") " . $conn->error);
     }

@@ -10,9 +10,11 @@ try {
         throw new Exception('Invalid JSON input: ' . json_last_error_msg());
     }
     $description = $data['description'];
+    // $jdate = $data['jdate'];
     $entries = $data['entries'];
+
     try {
-        $sql = "INSERT INTO jrlmaster (jdate, `description`, createdDateTime) VALUES ('2024-11-12', ?, CURRENT_TIMESTAMP())";
+        $sql = "INSERT INTO jrlmaster (jdate, `description`, createdDateTime) VALUES ('2024-06-08', ?, CURRENT_TIMESTAMP())";
         $stmt = $conn->prepare($sql);
         if ($stmt === false) {
             throw new Exception("Error preparing statement for jrlmaster: " . $conn->error);

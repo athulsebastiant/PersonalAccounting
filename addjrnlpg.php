@@ -104,6 +104,9 @@
     <title>Journal Entry Details</title>
 </head>
 
+<?php //echo date("Y-m-d"); 
+?>
+
 <body>
     <div class="button-container">
         <button type="submit" id="postButton" value="Post">Post</button>
@@ -111,7 +114,9 @@
     <div class="journal-container">
         <div class="journal-header">
             <h1>Journal Entry Details</h1>
-            <div class="date"><?php echo date("Y-m-d"); ?></div>
+            <label for="myDate">Date:</label>
+            <input type="date" id="jDate" name="jDate" value="<?php echo date('Y-m-d'); ?>" required>
+
         </div>
         <input type='text' id='description' name='description' placeholder="Journal Description" required>
         <table id="journalTable">
@@ -132,6 +137,14 @@
     </div>
 
     <script>
+        /*const myDateInput = document.getElementById('myDate');
+
+        // Set the default value if the field is empty on page load
+        if (!myDateInput.value) {
+            myDateInput.value = new Date().toISOString().split('T')[0];
+        }*/
+
+
         function addNewRow(element) {
             const table = document.getElementById('journalTable');
             const tbody = table.querySelector('tbody');
@@ -275,6 +288,7 @@
         document.getElementById('postButton').addEventListener('click', function() {
             const rows = document.querySelectorAll('#journalTable tbody tr');
             const description = document.getElementById('description').value;
+            //const jdate = document.getElementById('jdate').value;
 
             const entries = [];
             rows.forEach(row => {
@@ -294,6 +308,7 @@
             });
 
             const data = {
+
                 description,
                 entries
             };
