@@ -80,11 +80,74 @@ $result = $conn->query($sql);
         tfoot td {
             font-weight: bold;
         }
+
+        .navbar {
+            background-color: #333;
+            overflow: hidden;
+        }
+
+        .navbar a {
+            float: left;
+            color: white;
+            text-align: center;
+            padding: 14px 16px;
+            text-decoration: none;
+        }
+
+        .dropdown {
+            float: left;
+            overflow: hidden;
+        }
+
+        .dropdown .dropbtn {
+            border: none;
+            outline: none;
+            color: white;
+            padding: 14px 16px;
+            background-color: inherit;
+            font-family: inherit;
+            margin: 0;
+        }
+
+        .dropdown-content {
+            display: none;
+            position: absolute;
+            background-color: #f9f9f9;
+            min-width: 160px;
+            box-shadow: 0px 8px 16px 0px rgba(0, 0, 0, 0.2);
+            z-index: 1;
+        }
+
+        .dropdown-content a {
+            float: none;
+            color: black;
+            padding: 12px 16px;
+            text-decoration: none;
+            display: block;
+            text-align: left;
+        }
+
+        .dropdown:hover .dropdown-content {
+            display: block;
+        }
     </style>
     <title>Trial Balance</title>
 </head>
 
 <body>
+    <div class="navbar">
+        <a href="Homepg.php">Dashboard</a>
+        <div class="dropdown">
+            <button class="dropbtn">Reporting
+                <i class="fa fa-caret-down"></i>
+            </button>
+            <div class="dropdown-content">
+                <a href="BSpg.php">Balance Sheet</a>
+                <a href="PandLpg.php">Profit and Loss</a>
+                <a href="TrialBalancepg.php">Trial Balance</a>
+            </div>
+        </div>
+    </div>
 
     <div class="journal-container">
         <div class="journal-header">

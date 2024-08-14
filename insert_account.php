@@ -10,8 +10,9 @@ if (!empty($data)) {
         $categoryID = $conn->real_escape_string($row['CategoryID']);
         $subcategoryID = $conn->real_escape_string($row['SubcategoryID']);
 
-        $sql = "INSERT INTO coa (AccountNo, AccountName, CategoryID, SubcategoryID) VALUES ('$accountNo', '$accountName', '$categoryID', '$subcategoryID')";
-        $conn->query($sql);
+        $stmt = $conn->prepare("CALL InsertCOAData(?, ?, ?, ?)");
+        $stmt->bind_param("isii", $accountNo, $accountName, $categoryID, $subcategoryID);
+        $stmt->execute();
     }
     echo "Data inserted successfully!";
 } else {
