@@ -96,6 +96,7 @@
                 if (xhr.status === 200) {
                     if (xhr.responseText == "Login successful!") {
                         document.getElementById('message').style.color = 'green';
+                        window.location.href = 'Homepg.php';
                     } else {
                         document.getElementById('message').style.color = 'red';
                     }

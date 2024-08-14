@@ -1,3 +1,11 @@
+<?php
+session_start();
+if (!isset($_SESSION['username'])) {
+    // Redirect to login page if not logged in
+    header("Location: loginpg2.php");
+    exit();
+} ?>
+
 <!DOCTYPE html>
 <html lang="en">
 
@@ -116,7 +124,9 @@
             </div>
         </div>
     </div>
-
+    <br>
+    <h1>Welcome, <?php echo htmlspecialchars($_SESSION['username']); ?>!</h1>
+    <br>
     <div class="content-container">
         <div class="content-div">
             <a href="jrnldisplaypgtest.php">

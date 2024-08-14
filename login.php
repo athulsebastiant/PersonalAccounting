@@ -1,7 +1,7 @@
 <?php
 session_start(); // Start the session to manage user sessions
 
-include "connection.php";
+include "Connection.php";
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $input_username = $_POST['username'];
