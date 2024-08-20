@@ -1,4 +1,5 @@
 <?php
+include "SessionPG.php";
 $servername = "localhost";
 $username = "root";
 $password = "";

@@ -125,7 +125,7 @@ if (!isset($_SESSION['username'])) {
         </div>
     </div>
     <br>
-    <h1>Welcome, <?php echo htmlspecialchars($_SESSION['username']); ?>!</h1>
+    <h1>Welcome, <?php echo htmlspecialchars($_SESSION['username']); ?> You're the <?php echo htmlspecialchars($_SESSION['user_type']); ?>!</h1>
     <br>
     <div class="content-container">
         <div class="content-div">

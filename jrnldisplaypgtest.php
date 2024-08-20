@@ -1,4 +1,9 @@
 <?php
+/*if (!isset($_SESSION['username'])) {
+    // Redirect to login page if not logged in
+    header("Location: loginpg2.php");
+    exit();
+}*/
 // Database configuration
 $servername = "localhost";
 $username = "root";
@@ -15,7 +20,7 @@ if ($conn->connect_error) {
 }
 $t2 = "jrldetailed";
 // SQL query to fetch data from the table
-$sql = "SELECT jdate, $tableName.EntryID, $tableName.description, sum($t2.CreditAmount) AS 'Total', $tableName.createdBy FROM $tableName 
+$sql = "SELECT jdate, $tableName.EntryID, $tableName.description, sum($t2.CreditAmount) AS 'Total', $tableName.createdBy FROM $tableName
 INNER JOIN $t2 ON
 $tableName.EntryID = $t2.EntryID group by $tableName.EntryID";
 $result = $conn->query($sql);

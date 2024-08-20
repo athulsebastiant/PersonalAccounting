@@ -1,4 +1,9 @@
 <?php
+if (!isset($_SESSION['username'])) {
+    // Redirect to login page if not logged in
+    header("Location: loginpg2.php");
+    exit();
+} ?>
 $servername = "localhost";
 $username = "root";
 $password = "";
@@ -9,7 +14,7 @@ $conn = new mysqli($servername, $username, $password, $dbname);
 
 // Check connection
 if ($conn->connect_error) {
-    die("Connection failed: " . $conn->connect_error);
+die("Connection failed: " . $conn->connect_error);
 }
 
 // Call the stored procedure
