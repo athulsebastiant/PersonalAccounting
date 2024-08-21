@@ -1,5 +1,5 @@
 <?php
-include "connection.php";
+include "Connection.php";
 $query = "SELECT AccountNo, AccountName FROM coa ORDER BY AccountNo";
 $result = $conn->query($query);
 

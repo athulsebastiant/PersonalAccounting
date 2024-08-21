@@ -95,25 +95,148 @@ $result = $conn->query($sql);
     </style>
     <script>
         function addNewRow() {
+            // Get reference to the table's tbody
             var table = document.querySelector("table tbody");
+
+            // Create a new row
             var newRow = document.createElement("tr");
-            newRow.className = "new-row";
-            newRow.innerHTML = `
-        <td><input type="text" name="EntityID" placeholder="Enter Entity Id"></td>
-        <td><select name="type" id="typeDropdown">
-                <option value="Customer">Customer</option>
-                <option value="Supplier">Supplier</option>
 
-            </select></td>
-        <td class='editableAccount'></td>
-        <td><input type="text" name="name" placeholder="Enter Name of entity"></td>
-        <td><input type="text" name="mobileNo" placeholder="Enter mobileNo"></td>
-        <td><input type="text" name="email" placeholder="Enter email id"></td>
-        `;
+            // Create the input field for 'Entity Id'
+            var entityIdCell = document.createElement("td");
+            var entityIdInput = document.createElement("input");
+            entityIdInput.type = "text";
+            entityIdInput.placeholder = "Enter entity id";
+            entityIdCell.appendChild(entityIdInput);
+            newRow.appendChild(entityIdCell);
 
-            table.insertBefore(newRow, table.firstChild);
-            fetchSubcategories();
-            document.getElementById("saveButton").style.display = "inline-block";
+            // Create the select field for 'Type'
+            var typeCell = document.createElement("td");
+            var typeSelect = document.createElement("select");
+            var option1 = document.createElement("option");
+            option1.value = "Customer";
+            option1.text = "Customer";
+            var option2 = document.createElement("option");
+            option2.value = "Supplier";
+            option2.text = "Supplier";
+            typeSelect.appendChild(option1);
+            typeSelect.appendChild(option2);
+            typeCell.appendChild(typeSelect);
+            newRow.appendChild(typeCell);
+
+            // Create the select field for 'Account'
+            var accountCell = document.createElement("td");
+            var accountSelect = document.createElement("select");
+            accountSelect.innerHTML = "<option value=''>Loading...</option>";
+            loadAccounts(accountSelect); // Call function to load accounts from the database
+            accountCell.appendChild(accountSelect);
+            newRow.appendChild(accountCell);
+
+            // Create the input field for 'Name'
+            var nameCell = document.createElement("td");
+            var nameInput = document.createElement("input");
+            nameInput.type = "text";
+            nameInput.placeholder = "Enter the name";
+            nameCell.appendChild(nameInput);
+            newRow.appendChild(nameCell);
+
+            // Create the input field for 'Mobile no.'
+            var mobileCell = document.createElement("td");
+            var mobileInput = document.createElement("input");
+            mobileInput.type = "text";
+            mobileInput.placeholder = "Enter the mobile no.";
+            mobileCell.appendChild(mobileInput);
+            newRow.appendChild(mobileCell);
+
+            // Create the input field for 'Email'
+            var emailCell = document.createElement("td");
+            var emailInput = document.createElement("input");
+            emailInput.type = "text";
+            emailInput.placeholder = "Enter the email";
+            emailCell.appendChild(emailInput);
+            newRow.appendChild(emailCell);
+
+            // Append the new row to the table
+            table.appendChild(newRow);
+
+            // Show the save button
+            document.getElementById("saveButton").style.display = "inline";
+        }
+
+        // Function to load accounts from the database
+        function loadAccounts(selectElement) {
+            // Using XMLHttpRequest to POST to the server
+            var xhr = new XMLHttpRequest();
+            xhr.open("POST", "get_accounts.php", true);
+            xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
+
+            xhr.onreadystatechange = function() {
+                if (xhr.readyState == 4 && xhr.status == 200) {
+                    try {
+                        var accounts = JSON.parse(xhr.responseText);
+
+                        // Clear the loading option
+                        selectElement.innerHTML = "";
+                        var placeholderOption = document.createElement("option");
+                        placeholderOption.value = "";
+                        placeholderOption.text = "Select an account";
+                        placeholderOption.disabled = true;
+                        placeholderOption.selected = true;
+                        selectElement.appendChild(placeholderOption);
+
+                        accounts.forEach(function(account) {
+                            var option = document.createElement("option");
+                            option.value = account.id;
+                            option.text = account.name;
+                            selectElement.appendChild(option);
+                        });
+                    } catch (e) {
+                        console.error("Error parsing JSON response: " + e.message);
+                    }
+                }
+            };
+
+            xhr.send(); // No data needed for this request
+        }
+
+        function saveNewRows() {
+            // Collect all new rows from the table
+            var table = document.querySelector("table tbody");
+            var newRows = table.querySelectorAll("tr");
+            var rowsData = [];
+
+            // Iterate over each row to collect data
+            newRows.forEach(function(row) {
+                var rowData = {
+                    entityId: row.querySelector("td:nth-child(1) input").value,
+                    type: row.querySelector("td:nth-child(2) select").value,
+                    account: row.querySelector("td:nth-child(3) select").value,
+                    name: row.querySelector("td:nth-child(4) input").value,
+                    mobile: row.querySelector("td:nth-child(5) input").value,
+                    email: row.querySelector("td:nth-child(6) input").value
+                };
+                rowsData.push(rowData);
+            });
+            console.log("Rows Data: ", rowsData);
+            // Send the data to the server using AJAX
+            var xhr = new XMLHttpRequest();
+            xhr.open("POST", "save_entity.php", true);
+            xhr.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
+            xhr.onreadystatechange = function() {
+                if (xhr.readyState == 4) {
+                    console.log("AJAX request completed");
+                    if (xhr.status == 200) {
+                        var response = JSON.parse(xhr.responseText);
+                        if (response.status === "success") {
+                            alert(response.message);
+                        } else {
+                            alert("Error: " + response.message);
+                        }
+                    } else {
+                        console.error("Error with AJAX request. Status: " + xhr.status);
+                    }
+                }
+            };
+            xhr.send(JSON.stringify(rowsData));
         }
     </script>
 </head>

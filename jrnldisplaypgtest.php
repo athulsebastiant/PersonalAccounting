@@ -1,9 +1,10 @@
 <?php
-/*if (!isset($_SESSION['username'])) {
+session_start();
+if (!isset($_SESSION['username'])) {
     // Redirect to login page if not logged in
     header("Location: loginpg2.php");
     exit();
-}*/
+}
 // Database configuration
 $servername = "localhost";
 $username = "root";
@@ -112,6 +113,23 @@ $result = $conn->query($sql);
         .dropdown:hover .dropdown-content {
             display: block;
         }
+
+        .filter-buttons {
+            margin-bottom: 15px;
+        }
+
+        .filter-buttons button {
+            margin-right: 10px;
+            padding: 8px 16px;
+            background-color: #4CAF50;
+            color: #f9f9f9;
+            border: none;
+            cursor: pointer;
+        }
+
+        .filter-buttons button:hover {
+            background-color: #45a049;
+        }
     </style>
     <title>Database Table</title>
 </head>
@@ -129,6 +147,9 @@ $result = $conn->query($sql);
                 <a href="TrialBalancepg.php">Trial Balance</a>
             </div>
         </div>
+    </div>
+    <div class="filter-buttons">
+        <button onclick="redirectToPage()">New</button>
     </div>
     <table>
         <thead>
@@ -162,6 +183,9 @@ $result = $conn->query($sql);
     </table>
 
     <script>
+        function redirectToPage() {
+            window.location.href = 'addjrnlwithproc.php'; // Change 'newpage.html' to the URL of your choice
+        }
         document.addEventListener('DOMContentLoaded', function() {
             const rows = document.querySelectorAll('tr[data-href]');
             rows.forEach(row => {

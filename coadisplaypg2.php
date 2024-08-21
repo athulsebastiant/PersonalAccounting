@@ -1,7 +1,13 @@
 <?php
 // Database connection details (replace with your credentials)
 include "Connection.php";
-
+session_start();
+if (!isset($_SESSION['username'])) {
+    // Redirect to login page if not logged in
+    header("Location: loginpg2.php");
+    exit();
+} ?>
+<?php
 // Get the selected CategoryID from the GET request
 $selectedCategoryID = isset($_GET['CategoryID']) ? $_GET['CategoryID'] : '';
 
@@ -11,8 +17,8 @@ $categoryResult = $conn->query($categorySql);
 
 // SQL query to fetch account information
 $sql = "SELECT coa.AccountNo, coa.AccountName, accountsub.SubcategoryName
-        FROM coa
-        LEFT JOIN accountsub ON coa.CategoryID = accountsub.CategoryID AND coa.SubcategoryID = accountsub.SubcategoryID";
+FROM coa
+LEFT JOIN accountsub ON coa.CategoryID = accountsub.CategoryID AND coa.SubcategoryID = accountsub.SubcategoryID";
 
 if ($selectedCategoryID) {
     $sql .= " WHERE coa.CategoryID = '" . $conn->real_escape_string($selectedCategoryID) . "'";
