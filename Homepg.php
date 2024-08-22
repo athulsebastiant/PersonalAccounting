@@ -141,6 +141,13 @@ if (!isset($_SESSION['username'])) {
                 <p>Click here to access Chart of Accounts</p>
             </a>
         </div>
+
+        <div class="content-div">
+            <a href="Entitydisplaypg.php">
+                <h2>Manage Account Entities</h2>
+                <p>Click here to access Entities</p>
+            </a>
+        </div>
     </div>
 </body>
 

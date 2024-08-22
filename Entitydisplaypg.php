@@ -92,6 +92,56 @@ $result = $conn->query($sql);
         .dropdown:hover .dropdown-content {
             display: block;
         }
+
+        .navbar {
+            background-color: #333;
+            overflow: hidden;
+        }
+
+        .navbar a {
+            float: left;
+            color: white;
+            text-align: center;
+            padding: 14px 16px;
+            text-decoration: none;
+        }
+
+        .dropdown {
+            float: left;
+            overflow: hidden;
+        }
+
+        .dropdown .dropbtn {
+            border: none;
+            outline: none;
+            color: white;
+            padding: 14px 16px;
+            background-color: inherit;
+            font-family: inherit;
+            margin: 0;
+        }
+
+        .dropdown-content {
+            display: none;
+            position: absolute;
+            background-color: #f9f9f9;
+            min-width: 160px;
+            box-shadow: 0px 8px 16px 0px rgba(0, 0, 0, 0.2);
+            z-index: 1;
+        }
+
+        .dropdown-content a {
+            float: none;
+            color: black;
+            padding: 12px 16px;
+            text-decoration: none;
+            display: block;
+            text-align: left;
+        }
+
+        .dropdown:hover .dropdown-content {
+            display: block;
+        }
     </style>
     <script>
         function addNewRow() {
@@ -206,17 +256,45 @@ $result = $conn->query($sql);
 
             // Iterate over each row to collect data
             newRows.forEach(function(row) {
+                // Initialize variables for each field, defaulting to an empty string
+                var entityIdInput = row.querySelector("td:nth-child(1) input");
+                var typeSelect = row.querySelector("td:nth-child(2) select");
+                var accountSelect = row.querySelector("td:nth-child(3) select");
+                var nameInput = row.querySelector("td:nth-child(4) input");
+                var mobileInput = row.querySelector("td:nth-child(5) input");
+                var emailInput = row.querySelector("td:nth-child(6) input");
+
+                // Check if the elements exist before accessing their value
                 var rowData = {
-                    entityId: row.querySelector("td:nth-child(1) input").value,
-                    type: row.querySelector("td:nth-child(2) select").value,
-                    account: row.querySelector("td:nth-child(3) select").value,
-                    name: row.querySelector("td:nth-child(4) input").value,
-                    mobile: row.querySelector("td:nth-child(5) input").value,
-                    email: row.querySelector("td:nth-child(6) input").value
+                    entityId: entityIdInput ? entityIdInput.value : "",
+                    type: typeSelect ? typeSelect.value : "",
+                    account: accountSelect ? accountSelect.value : "",
+                    name: nameInput ? nameInput.value : "",
+                    mobile: mobileInput ? mobileInput.value : "",
+                    email: emailInput ? emailInput.value : ""
                 };
-                rowsData.push(rowData);
+
+                // Push only if at least one field is filled to avoid empty rows
+                if (rowData.entityId || rowData.type || rowData.account || rowData.name || rowData.mobile || rowData.email) {
+                    rowsData.push(rowData);
+                }
             });
-            console.log("Rows Data: ", rowsData);
+
+            // Log the rowsData array to check the collected values
+            rowsData.forEach(function(row) {
+                console.log("Entity Id: " + row.entityId);
+                console.log("Type: " + row.type);
+                console.log("Account: " + row.account);
+                console.log("Name: " + row.name);
+                console.log("Mobile: " + row.mobile);
+                console.log("Email: " + row.email);
+                console.log("-----"); // Separator for better readability
+            });
+
+
+
+
+            //console.log("Rows Data: ", rowsData);
             // Send the data to the server using AJAX
             var xhr = new XMLHttpRequest();
             xhr.open("POST", "save_entity.php", true);
@@ -228,6 +306,7 @@ $result = $conn->query($sql);
                         var response = JSON.parse(xhr.responseText);
                         if (response.status === "success") {
                             alert(response.message);
+                            location.reload();
                         } else {
                             alert("Error: " + response.message);
                         }
@@ -237,11 +316,25 @@ $result = $conn->query($sql);
                 }
             };
             xhr.send(JSON.stringify(rowsData));
-        }
+        };
     </script>
 </head>
 
 <body>
+    <div class="navbar">
+        <a href="Homepg.php">Dashboard</a>
+        <div class="dropdown">
+            <button class="dropbtn">Reporting
+                <i class="fa fa-caret-down"></i>
+            </button>
+            <div class="dropdown-content">
+                <a href="BSpg.php">Balance Sheet</a>
+                <a href="PandLpg.php">Profit and Loss</a>
+                <a href="TrialBalancepg.php">Trial Balance</a>
+            </div>
+        </div>
+    </div>
+
     <button class="new-button"
         onclick="addNewRow()"> New </button>
     <button class="save-button"
