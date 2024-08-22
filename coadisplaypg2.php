@@ -6,7 +6,9 @@ if (!isset($_SESSION['username'])) {
     // Redirect to login page if not logged in
     header("Location: loginpg2.php");
     exit();
-} ?>
+}
+include "Permission.php";
+?>
 <?php
 // Get the selected CategoryID from the GET request
 $selectedCategoryID = isset($_GET['CategoryID']) ? $_GET['CategoryID'] : '';
