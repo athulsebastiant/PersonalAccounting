@@ -35,29 +35,39 @@ $result = $conn->query($sql);
         .navbar {
             background-color: #333;
             overflow: hidden;
+            display: flex;
+            align-items: center;
+            font-family: Arial, sans-serif;
+            /* Set a consistent font */
         }
 
-        .navbar a {
-            float: left;
+        .navbar a,
+        .navbar .dropbtn {
             color: white;
             text-align: center;
-            padding: 14px 16px;
+            padding: 14px 20px;
+            /* Increased horizontal padding */
             text-decoration: none;
+            font-size: 16px;
+            /* Consistent font size */
         }
 
         .dropdown {
-            float: left;
             overflow: hidden;
         }
 
         .dropdown .dropbtn {
             border: none;
             outline: none;
-            color: white;
-            padding: 14px 16px;
             background-color: inherit;
-            font-family: inherit;
             margin: 0;
+            cursor: pointer;
+        }
+
+        .navbar a:hover,
+        .dropdown:hover .dropbtn {
+            background-color: #ddd;
+            color: black;
         }
 
         .dropdown-content {
@@ -78,8 +88,17 @@ $result = $conn->query($sql);
             text-align: left;
         }
 
+        .dropdown-content a:hover {
+            background-color: #ddd;
+        }
+
         .dropdown:hover .dropdown-content {
             display: block;
+        }
+
+        /* Push logout to the right */
+        .navbar a:last-child {
+            margin-left: auto;
         }
 
         .journal-container {
@@ -152,9 +171,13 @@ $result = $conn->query($sql);
                 <a href="BSpg.php">Balance Sheet</a>
                 <a href="PandLpg.php">Profit and Loss</a>
                 <a href="TrialBalancepg.php">Trial Balance</a>
+
             </div>
         </div>
+
+        <a href="logout.php">Logout</a>
     </div>
+    <br>
     <div class="journal-container">
         <div class="journal-header">
             <h1>Balance Sheet</h1>

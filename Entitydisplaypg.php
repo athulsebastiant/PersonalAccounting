@@ -56,69 +56,42 @@ $result = $conn->query($sql);
             background-color: #f9f9f9;
         }
 
-        .dropdown {
-            float: left;
-            overflow: hidden;
-        }
-
-        .dropdown .dropbtn {
-            border: none;
-            outline: none;
-            color: white;
-            padding: 14px 16px;
-            background-color: inherit;
-            font-family: inherit;
-            margin: 0;
-        }
-
-        .dropdown-content {
-            display: none;
-            position: absolute;
-            background-color: #f9f9f9;
-            min-width: 160px;
-            box-shadow: 0px 8px 16px 0px rgba(0, 0, 0, 0.2);
-            z-index: 1;
-        }
-
-        .dropdown-content a {
-            float: none;
-            color: black;
-            padding: 12px 16px;
-            text-decoration: none;
-            display: block;
-            text-align: left;
-        }
-
-        .dropdown:hover .dropdown-content {
-            display: block;
-        }
-
         .navbar {
             background-color: #333;
             overflow: hidden;
+            display: flex;
+            align-items: center;
+            font-family: Arial, sans-serif;
+            /* Set a consistent font */
         }
 
-        .navbar a {
-            float: left;
+        .navbar a,
+        .navbar .dropbtn {
             color: white;
             text-align: center;
-            padding: 14px 16px;
+            padding: 14px 20px;
+            /* Increased horizontal padding */
             text-decoration: none;
+            font-size: 16px;
+            /* Consistent font size */
         }
 
         .dropdown {
-            float: left;
             overflow: hidden;
         }
 
         .dropdown .dropbtn {
             border: none;
             outline: none;
-            color: white;
-            padding: 14px 16px;
             background-color: inherit;
-            font-family: inherit;
             margin: 0;
+            cursor: pointer;
+        }
+
+        .navbar a:hover,
+        .dropdown:hover .dropbtn {
+            background-color: #ddd;
+            color: black;
         }
 
         .dropdown-content {
@@ -139,8 +112,34 @@ $result = $conn->query($sql);
             text-align: left;
         }
 
+        .dropdown-content a:hover {
+            background-color: #ddd;
+        }
+
         .dropdown:hover .dropdown-content {
             display: block;
+        }
+
+        /* Push logout to the right */
+        .navbar a:last-child {
+            margin-left: auto;
+        }
+
+        .filter-buttons {
+            margin-bottom: 15px;
+        }
+
+        .filter-buttons button {
+            margin-right: 10px;
+            padding: 8px 16px;
+            background-color: #4CAF50;
+            color: #f9f9f9;
+            border: none;
+            cursor: pointer;
+        }
+
+        .filter-buttons button:hover {
+            background-color: #45a049;
         }
     </style>
     <script>
@@ -331,16 +330,22 @@ $result = $conn->query($sql);
                 <a href="BSpg.php">Balance Sheet</a>
                 <a href="PandLpg.php">Profit and Loss</a>
                 <a href="TrialBalancepg.php">Trial Balance</a>
+
             </div>
         </div>
-    </div>
 
-    <button class="new-button"
-        onclick="addNewRow()"> New </button>
-    <button class="save-button"
-        id="saveButton"
-        style="display:none;"
-        onclick="saveNewRows()"> Save </button>
+        <a href="logout.php">Logout</a>
+    </div>
+    <br>
+
+    <div class="filter-buttons">
+        <button class="new-button"
+            onclick="addNewRow()"> New </button>
+        <button class="save-button"
+            id="saveButton"
+            style="display:none;"
+            onclick="saveNewRows()"> Save </button>
+    </div>
     <table>
         <thead>
             <tr>
