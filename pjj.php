@@ -22,7 +22,7 @@ $entries = isset($data['entries']) ? $data['entries'] : [];
 // Convert the $entries array to a JSON string
 $entries_json = json_encode($entries);
 
-$stmt = $conn->prepare("CALL YourStoredProcedure(?, ?, ?, @status)");
+$stmt = $conn->prepare("CALL YourStoredProcedure2(?, ?, ?, @status)");
 
 // Bind parameters
 $stmt->bind_param('sss', $jdate, $description, $entries_json);
@@ -43,8 +43,8 @@ if ($stmt->execute()) {
 }
 
 // Send the response back to the client
-//echo json_encode($response);
-echo $stmt->error;
+echo json_encode($response);
+
 // Close the statement and connection
 $stmt->close();
 $conn->close();

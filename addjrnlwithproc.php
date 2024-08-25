@@ -317,6 +317,7 @@ if (!isset($_SESSION['username'])) {
             });
         };
 
+
         function showDropdown(element) {
             // Only proceed if this is the first column
             if (element.cellIndex !== 0) return;
@@ -382,14 +383,19 @@ if (!isset($_SESSION['username'])) {
             const rows = document.querySelectorAll('#journalTable tbody tr');
             const description = document.getElementById('description').value;
             const jdate = document.getElementById('jDate').value;
-
+            if (!validateEntries()) {
+                return; // Exit the function if validation fails
+            }
             const entries = [];
+            let totalDebit = 0;
+            let totalCredit = 0;
             rows.forEach(row => {
                 const account = row.querySelector('.account') ? row.querySelector('.account').dataset.accountId : '';
                 const label = row.querySelector('.label') ? row.querySelector('.label').textContent.trim() : '';
-                const debit = row.querySelector('.debit') ? row.querySelector('.debit').textContent.trim() : '';
-                const credit = row.querySelector('.credit') ? row.querySelector('.credit').textContent.trim() : '';
-
+                const debit = row.querySelector('.debit') ? parseFloat(row.querySelector('.debit').textContent.trim()) : 0.0;
+                const credit = row.querySelector('.credit') ? parseFloat(row.querySelector('.credit').textContent.trim()) : 0.0;
+                totalDebit += debit;
+                totalCredit += credit;
                 if (account && label && (debit || credit)) {
                     entries.push({
                         account,
@@ -399,6 +405,10 @@ if (!isset($_SESSION['username'])) {
                     });
                 }
             });
+            if (totalDebit !== totalCredit) {
+                alert('Total Debit and Total Credit must be equal!');
+                return; // Exit the function early to prevent the AJAX request
+            }
             const data = {
                 jdate: jdate,
                 description: description,
@@ -432,6 +442,60 @@ if (!isset($_SESSION['username'])) {
                     alert('Fetch error: ' + error.message);
                 });
         });
+
+        function validateEntries() {
+            const rows = document.querySelectorAll('#journalTable tbody tr');
+            let validationFailed = false; // Flag to check if any validation fails
+            const description = document.getElementById('description').value.trim();
+            let hasValidRow = false;
+            const jdate = document.getElementById('jDate').value;
+            if (!description) {
+                alert('Description field is required.');
+                validationFailed = true;
+            }
+
+            // Validate date
+            if (!jdate) {
+                alert('Date field is required.');
+                validationFailed = true;
+            }
+            rows.forEach(row => {
+                const accountCell = row.querySelector('.account');
+                const debitCell = row.querySelector('.debit');
+                const creditCell = row.querySelector('.credit');
+
+
+                // Validate required fields
+                if (accountCell && debitCell && creditCell) {
+                    const account = accountCell.textContent.trim();
+                    const debit = parseFloat(debitCell.textContent.trim());
+                    const credit = parseFloat(creditCell.textContent.trim());
+
+                    if (account && (debit || credit)) {
+                        hasValidRow = true; // Mark that at least one valid row exists
+                    }
+
+                    if (!account) {
+                        alert('Account field is required.');
+                        validationFailed = true;
+                    }
+                    if (isNaN(debit) || debit < 0) {
+                        alert('Debit field is required and must be a valid number.');
+                        validationFailed = true;
+                    }
+                    if (isNaN(credit) || credit < 0) {
+                        alert('Credit field is required and must be a valid number.');
+                        validationFailed = true;
+                    }
+                }
+            });
+            if (!hasValidRow) {
+                alert('No journal entries made.');
+                validationFailed = true;
+            }
+
+            return !validationFailed; // Return false if validation failed
+        }
     </script>
 
 
