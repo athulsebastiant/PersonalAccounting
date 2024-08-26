@@ -256,6 +256,7 @@ if (!isset($_SESSION['username'])) {
         <td contenteditable="true" class="editable credit"></td>
     `;
 
+            attachInputListeners(currentRow);
             // Add click event listener to the first cell
             currentRow.cells[0].addEventListener('click', function() {
                 showDropdown(this);
@@ -270,6 +271,41 @@ if (!isset($_SESSION['username'])) {
                 }
             });
         }
+
+        function attachInputListeners(row) {
+            const debitCell = row.querySelector('.debit');
+            const creditCell = row.querySelector('.credit');
+
+            if (debitCell) {
+                debitCell.addEventListener('input', () => {
+                    updateOppositeCell(row, 'debit');
+                });
+            }
+
+            if (creditCell) {
+                creditCell.addEventListener('input', () => {
+                    updateOppositeCell(row, 'credit');
+                });
+            }
+        }
+
+        function updateOppositeCell(row, cellType) {
+            const debitCell = row.querySelector('.debit');
+            const creditCell = row.querySelector('.credit');
+
+            if (cellType === 'debit') {
+                if (debitCell && debitCell.textContent.trim() !== '') {
+                    creditCell.textContent = '0.0';
+                    creditCell.dataset.value = '0.0';
+                }
+            } else if (cellType === 'credit') {
+                if (creditCell && creditCell.textContent.trim() !== '') {
+                    debitCell.textContent = '0.0';
+                    debitCell.dataset.value = '0.0';
+                }
+            }
+        }
+
 
         function addEnterLine() {
             const table = document.getElementById('journalTable');
@@ -377,6 +413,9 @@ if (!isset($_SESSION['username'])) {
                 element.dataset.accountId = this.value;
             });
         }
+
+
+
 
 
         document.getElementById('postButton').addEventListener('click', function() {

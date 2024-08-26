@@ -216,6 +216,7 @@ if (!isset($_SESSION['username'])) {
             <thead>
                 <tr>
                     <th>Account</th>
+                    <th>Entity</th>
                     <th>Label</th>
                     <th>Debit</th>
                     <th>Credit</th>
@@ -251,6 +252,7 @@ if (!isset($_SESSION['username'])) {
             // Split the cell into four editable cells
             currentRow.innerHTML = `
         <td contenteditable="true" class="editable account"></td>
+        <td contenteditable="true" class="editable entity"></td>
         <td contenteditable="true" class="editable label"></td>
         <td contenteditable="true" class="editable debit"></td>
         <td contenteditable="true" class="editable credit"></td>
@@ -261,6 +263,11 @@ if (!isset($_SESSION['username'])) {
             currentRow.cells[0].addEventListener('click', function() {
                 showDropdown(this);
             });
+
+            currentRow.cells[1].addEventListener('click', function() {
+                showDropdownEnt(this);
+            });
+
 
             // Add event listener to the first cell of the current row
             currentRow.cells[0].addEventListener('input', function() {
@@ -414,6 +421,65 @@ if (!isset($_SESSION['username'])) {
             });
         }
 
+        function showDropdownEnt(element) {
+            // Only proceed if this is the first column
+            if (element.cellIndex !== 1) return;
+            if (element.querySelector('.entity-dropdown')) return;
+            // Create a dropdown element
+            const dropdown = document.createElement('select');
+            dropdown.className = 'entity-dropdown';
+
+            // Add a loading option
+            dropdown.innerHTML = '<option>Loading...</option>';
+
+            // Insert the dropdown into the cell
+            element.innerHTML = '';
+            element.appendChild(dropdown);
+
+            // Fetch data from PHP using AJAX
+            fetch('get_entities.php')
+                .then(response => {
+                    console.log('Raw response:', response);
+                    return response.text(); // Change this to text() instead of json()
+                })
+                .then(text => {
+                    console.log('Response text:', text);
+                    // Try to parse the text as JSON
+                    try {
+                        const data = JSON.parse(text);
+                        console.log('Parsed data:', data);
+
+                        // Clear the dropdown
+                        dropdown.innerHTML = '';
+
+                        // Add a default option
+                        const defaultOption = document.createElement('option');
+                        defaultOption.text = 'Select an entity';
+                        defaultOption.value = '';
+                        dropdown.add(defaultOption);
+
+                        // Add options from the fetched data
+                        data.forEach(entity => {
+                            const option = document.createElement('option');
+                            option.text = entity.name;
+                            option.value = entity.Eid;
+                            dropdown.add(option);
+                        });
+                    } catch (e) {
+                        console.error('Error parsing JSON:', e);
+                        throw new Error('Invalid JSON response');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching accounts:', error);
+                    element.innerHTML = 'Error loading entities';
+                });
+            // Handle selection
+            dropdown.addEventListener('change', function() {
+                element.innerHTML = this.options[this.selectedIndex].text;
+                element.dataset.EntityId = this.value;
+            });
+        }
 
 
 
@@ -430,6 +496,7 @@ if (!isset($_SESSION['username'])) {
             let totalCredit = 0;
             rows.forEach(row => {
                 const account = row.querySelector('.account') ? row.querySelector('.account').dataset.accountId : '';
+                const entity = row.querySelector('.entity') ? row.querySelector('.entity').dataset.EntityId : null;
                 const label = row.querySelector('.label') ? row.querySelector('.label').textContent.trim() : '';
                 const debit = row.querySelector('.debit') ? parseFloat(row.querySelector('.debit').textContent.trim()) : 0.0;
                 const credit = row.querySelector('.credit') ? parseFloat(row.querySelector('.credit').textContent.trim()) : 0.0;
@@ -438,6 +505,7 @@ if (!isset($_SESSION['username'])) {
                 if (account && label && (debit || credit)) {
                     entries.push({
                         account,
+                        entity,
                         label,
                         debit,
                         credit

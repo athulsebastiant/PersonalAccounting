@@ -22,7 +22,7 @@ $entries = isset($data['entries']) ? $data['entries'] : [];
 // Convert the $entries array to a JSON string
 $entries_json = json_encode($entries);
 
-$stmt = $conn->prepare("CALL YourStoredProcedure2(?, ?, ?, @status)");
+$stmt = $conn->prepare("CALL YourStoredProcedure5(?, ?, ?, @status)");
 
 // Bind parameters
 $stmt->bind_param('sss', $jdate, $description, $entries_json);
