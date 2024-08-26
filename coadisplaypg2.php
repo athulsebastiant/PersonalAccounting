@@ -235,14 +235,25 @@ $result = $conn->query($sql);
                 xhr.open("POST", "insert_account.php", true);
                 xhr.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
                 xhr.onreadystatechange = function() {
-                    if (xhr.readyState == 4 && xhr.status == 200) {
-                        alert("Data saved successfully!");
-                        location.reload();
+                    if (xhr.readyState == 4) {
+                        if (xhr.status == 200) {
+                            try {
+                                var response = JSON.parse(xhr.responseText);
+                                if (response.status === "success") {
+                                    alert("Data saved successfully!");
+                                    location.reload();
+                                } else {
+                                    alert("Failed to save data: " + response.message);
+                                }
+                            } catch (e) {
+                                console.error("Server response:", xhr.responseText);
+                                alert("Error parsing server response. Check console for details.");
+                            }
+                        } else {
+                            alert("Server error: " + xhr.status);
+                        }
                     }
                 };
-                xhr.send(JSON.stringify(newRows));
-            } else {
-                alert("Please fill in all fields.");
             }
         }
     </script>
