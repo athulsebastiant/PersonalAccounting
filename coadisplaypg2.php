@@ -211,7 +211,7 @@ $result = $conn->query($sql);
         }
 
         function saveNewRows() {
-            var rows = document.querySelectorAll("table tbody tr.new-row");
+            /*var rows = document.querySelectorAll("table tbody tr.new-row");
             var newRows = [];
 
             rows.forEach(function(row) {
@@ -254,6 +254,51 @@ $result = $conn->query($sql);
                         }
                     }
                 };
+            }
+                */
+            var rows = document.querySelectorAll("table tbody tr.new-row");
+            var newRows = [];
+
+            rows.forEach(function(row) {
+                var accountNo = row.querySelector("input[name='AccountNo']").value;
+                var accountName = row.querySelector("input[name='AccountName']").value;
+                var subcategory = row.querySelector("select[name='SubcategoryName']").value;
+
+                if (accountNo && accountName && subcategory) {
+                    var [categoryID, subcategoryID] = subcategory.split(",");
+                    newRows.push({
+                        AccountNo: accountNo,
+                        AccountName: accountName,
+                        CategoryID: categoryID,
+                        SubcategoryID: subcategoryID
+                    });
+                }
+            });
+
+            if (newRows.length > 0) {
+                fetch('insert_account.php', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify(newRows),
+                    })
+                    .then(response => response.json()) // Parse the response as JSON
+                    .then(result => {
+                        if (result.status === 'success') {
+                            alert('Data saved successfully!');
+                            location.reload();
+                        } else {
+                            console.error('Error:', result.message);
+                            alert('Failed to save data: ' + result.message);
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Fetch error:', error);
+                        alert('Fetch error: ' + error.message);
+                    });
+            } else {
+                alert("Please fill in all fields.");
             }
         }
     </script>

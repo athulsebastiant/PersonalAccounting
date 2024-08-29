@@ -157,7 +157,7 @@ if (!isset($_SESSION['username'])) {
         </div>
 
         <div class="content-div">
-            <a href="coadisplaypg2.php">
+            <a href="coadisplaypg2.php" id="getme">
                 <h2>Chart of Accounts</h2>
                 <p>Click here to access Chart of Accounts</p>
             </a>
@@ -170,6 +170,14 @@ if (!isset($_SESSION['username'])) {
             </a>
         </div>
     </div>
+    <script>
+        addEventListener(window.onload, showAlert());
+
+        function showAlert() {
+            alert("Welcome <?php echo htmlspecialchars($_SESSION['username']); ?>");
+        }
+    </script>
+
 </body>
 
 </html>
