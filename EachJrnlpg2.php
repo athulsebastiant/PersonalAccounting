@@ -17,6 +17,7 @@ if ($conn->connect_error) {
 if (isset($_GET['EntryID'])) {
     // Retrieve the EntryID from the URL
     $entry_id = $_GET['EntryID'];
+
     // Fetch jrlmaster data
     $sql_master = "SELECT EntryID, jdate, description FROM jrlmaster WHERE EntryID = ?";
     $stmt_master = $conn->prepare($sql_master);
@@ -26,7 +27,7 @@ if (isset($_GET['EntryID'])) {
     $master_data = $result_master->fetch_assoc();
     // Fetch jrldetailed and coa data
     $sql_detail = "
-SELECT jd.AccountID, coa.AccountName, jd.description, jd.DebitAmount, jd.CreditAmount
+SELECT jd.LineID,jd.AccountID, coa.AccountName, jd.description, jd.DebitAmount, jd.CreditAmount
 FROM jrldetailed jd
 JOIN coa ON jd.AccountID = coa.AccountNo
 WHERE jd.EntryID = ?";
@@ -110,141 +111,117 @@ WHERE jd.EntryID = ?";
         tfoot td {
             font-weight: bold;
         }
+
+        .navbar {
+            background-color: #333;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            font-family: Arial, sans-serif;
+            /* Set a consistent font */
+        }
+
+        .navbar a,
+        .navbar .dropbtn {
+            color: white;
+            text-align: center;
+            padding: 14px 20px;
+            /* Increased horizontal padding */
+            text-decoration: none;
+            font-size: 16px;
+            /* Consistent font size */
+        }
+
+        .dropdown {
+            overflow: hidden;
+        }
+
+        .dropdown .dropbtn {
+            border: none;
+            outline: none;
+            background-color: inherit;
+            margin: 0;
+            cursor: pointer;
+        }
+
+        .navbar a:hover,
+        .dropdown:hover .dropbtn {
+            background-color: #ddd;
+            color: black;
+        }
+
+        .dropdown-content {
+            display: none;
+            position: absolute;
+            background-color: #f9f9f9;
+            min-width: 160px;
+            box-shadow: 0px 8px 16px 0px rgba(0, 0, 0, 0.2);
+            z-index: 1;
+        }
+
+        .dropdown-content a {
+            float: none;
+            color: black;
+            padding: 12px 16px;
+            text-decoration: none;
+            display: block;
+            text-align: left;
+        }
+
+        .dropdown-content a:hover {
+            background-color: #ddd;
+        }
+
+        .dropdown:hover .dropdown-content {
+            display: block;
+        }
+
+        /* Push logout to the right */
+        .navbar a:last-child {
+            margin-left: auto;
+        }
+
+        .filter-buttons {
+            margin-bottom: 15px;
+        }
+
+        .filter-buttons button {
+            margin-right: 10px;
+            padding: 8px 16px;
+            background-color: #4CAF50;
+            color: #f9f9f9;
+            border: none;
+            cursor: pointer;
+        }
+
+        .filter-buttons button:hover {
+            background-color: #45a049;
+        }
     </style>
     <title>Journal Entry Details</title>
 </head>
 
 <body>
+    <div class="navbar">
+        <a href="Homepg.php">Dashboard</a>
+        <div class="dropdown">
+            <button class="dropbtn">Reporting
+                <i class="fa fa-caret-down"></i>
+            </button>
+            <div class="dropdown-content">
+                <a href="BSpg.php">Balance Sheet</a>
+                <a href="PandLpg.php">Profit and Loss</a>
+                <a href="TrialBalancepg.php">Trial Balance</a>
 
-    <div class="journal-container">
-        <div class="journal-header">
-            <h1><?php echo htmlspecialchars($master_data['description']); ?></h1>
-            <div class="date"><?php echo htmlspecialchars($master_data['jdate']); ?></div>
+            </div>
         </div>
 
-        <table>
-            <thead>
-                <tr>
-                    <th>Account</th>
-                    <th>Label</th>
-                    <th>Debit</th>
-                    <th>Credit</th>
-                </tr>
-            </thead>
-            <tbody>
-                <?php
-                $total_debit = 0;
-                $total_credit = 0;
-                while ($row = $result_detail->fetch_assoc()) {
-                    $total_debit += $row['DebitAmount'];
-                    $total_credit += $row['CreditAmount'];
-                    echo "<tr>
-                        <td>" . htmlspecialchars($row['AccountID']) . " - " . htmlspecialchars($row['AccountName']) . "</td>
-                        <td>" . htmlspecialchars($row['description']) . "</td>
-                        <td>" . htmlspecialchars($row['DebitAmount']) . "</td>
-                        <td>" . htmlspecialchars($row['CreditAmount']) . "</td>
-                      </tr>";
-                }
-                ?>
-            </tbody>
-            <tfoot>
-                <tr>
-                    <td colspan="2">Total</td>
-                    <td><?php echo htmlspecialchars($total_debit); ?></td>
-                    <td><?php echo htmlspecialchars($total_credit); ?></td>
-                </tr>
-            </tfoot>
-        </table>
+        <a href="logout.php">Logout</a>
     </div>
-
-    <?php
-    // Close the database connection
-    $conn->close();
-    ?>
-
-</body>
-
-</html>
-
-
-
-
-
-
-<!DOCTYPE html>
-<html lang="en">
-
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <style>
-        .journal-container {
-            max-width: 100%;
-            border: 1px solid #ddd;
-            padding: 20px;
-            margin: 20px auto;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-            overflow-x: auto;
-            /* Ensure the container itself handles any overflow */
-        }
-
-        .journal-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            flex-wrap: wrap;
-            /* Allows elements to wrap to the next line if needed */
-        }
-
-        .journal-header h1 {
-            margin: 0;
-            font-size: 1.5em;
-            font-weight: bold;
-            flex: 1 1 auto;
-            /* Allow the header to take available space */
-        }
-
-        .journal-header .date {
-            font-size: 1em;
-            color: #888;
-            margin-top: 10px;
-            flex: 1 1 auto;
-            /* Allow the date to take available space */
-            text-align: right;
-            /* Align the date to the right */
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 20px;
-            overflow-x: auto;
-            /* Ensure the table itself handles any overflow */
-        }
-
-        thead {
-            background-color: #f2f2f2;
-        }
-
-        th,
-        td {
-            border: 1px solid #ddd;
-            padding: 8px;
-        }
-
-        th {
-            background-color: #e0e0e0;
-        }
-
-        tfoot td {
-            font-weight: bold;
-        }
-    </style>
-    <title>Journal Entry Details</title>
-</head>
-
-<body>
-
+    <br>
+    <div class="filter-buttons">
+        <button>Edit</button>
+    </div>
     <div class="journal-container">
         <div class="journal-header">
             <?php if ($master_data) : ?>
@@ -280,12 +257,15 @@ WHERE jd.EntryID = ?";
                 }
                 ?>
             </tbody>
-            <tfoot>
-                <tr>
-                    <td colspan="2">Total</td>
-                    <td><?php echo htmlspecialchars($total_debit); ?></td>
-                    <td><?php echo htmlspecialchars($total_credit); ?></td>
-                </tr>
-            </tfoot>
+
         </table>
     </div>
+
+    <?php
+    // Close the database connection
+    $conn->close();
+    ?>
+
+</body>
+
+</html>
