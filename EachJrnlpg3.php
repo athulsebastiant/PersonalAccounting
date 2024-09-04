@@ -1,17 +1,6 @@
 <?php
 // Database configuration
-$servername = "localhost";
-$username = "root";
-$password = "";
-$dbname = "ac2";
-
-// Create connection
-$conn = new mysqli($servername, $username, $password, $dbname);
-
-// Check connection
-if ($conn->connect_error) {
-    die("Connection failed: " . $conn->connect_error);
-}
+include "Connection.php";
 
 // Fetch EntryID from query parameter
 if (isset($_GET['EntryID'])) {
@@ -98,6 +87,16 @@ WHERE
             text-align: right;
             /* Align the date to the right */
         }
+
+        .journal-header .entry-id {
+            margin: 0;
+            font-size: 1em;
+            text-align: center;
+            /* Centers the entry number */
+            flex: 1;
+            /* Takes equal space */
+        }
+
 
         table {
             width: 100%;
@@ -249,15 +248,17 @@ WHERE
         <div class="journal-header">
             <?php if ($master_data) : ?>
                 <h1><?php echo htmlspecialchars($master_data['description']); ?></h1>
-                <div class="date"><?php echo htmlspecialchars($master_data['jdate']); ?></div>
-            <?php else : ?>
-                <h1>No data found</h1>
-            <?php endif; ?>
+                <h4>Entry No.<?php echo $entry_id; ?></h2>
+                    <div class="date"><?php echo htmlspecialchars($master_data['jdate']); ?></div>
+                <?php else : ?>
+                    <h1>No data found</h1>
+                <?php endif; ?>
         </div>
 
         <table>
             <thead>
                 <tr>
+                    <th>Line Id</th>
                     <th>Account</th>
                     <th>Entity</th>
                     <th>Label</th>
@@ -273,7 +274,8 @@ WHERE
                     $total_debit += $row['DebitAmount'];
                     $total_credit += $row['CreditAmount'];
                     echo "<tr>
-                        <td>" . htmlspecialchars($row['AccountID']) . " - " . htmlspecialchars($row['AccountName']) . "</td>
+                    <td>" . htmlspecialchars($row['LineID'])  . "</td>    
+                    <td>" . htmlspecialchars($row['AccountID']) . " - " . htmlspecialchars($row['AccountName']) . "</td>
                         <td>" . htmlspecialchars($row['EntityID']) . " - " . htmlspecialchars($row['EntityName']) . "</td>
                         <td>" . htmlspecialchars($row['description']) . "</td>
                         <td>" . htmlspecialchars($row['DebitAmount']) . "</td>
@@ -293,17 +295,17 @@ WHERE
     <script>
         function makeEditable() {
             const table = document.querySelector('table');
-            const editableColumns = [0, 1, 2, 3, 4]; // Columns for Account, Entity, Label, Debit, and Credit (0-indexed)
+            const editableColumns = [0, 1, 2, 3, 4, 5]; // Columns for Account, Entity, Label, Debit, and Credit (0-indexed)
 
             table.querySelectorAll('tbody tr').forEach(row => {
                 editableColumns.forEach(colIndex => {
                     const cell = row.cells[colIndex];
-                    if (colIndex === 0) {
+                    if (colIndex === 1) {
                         // For Account column, add click listener to show dropdown
                         cell.addEventListener('click', function() {
                             showDropdown(this);
                         });
-                    } else if (colIndex === 1) {
+                    } else if (colIndex === 2) {
                         // For Entity column, add click listener to show dropdown
                         cell.addEventListener('click', function() {
                             showDropdownEnt(this);
@@ -323,9 +325,9 @@ WHERE
                 cell.removeAttribute('contenteditable');
                 cell.classList.remove('editable');
                 // Remove click listeners from Account and Entity cells
-                if (cell.cellIndex === 0 || cell.cellIndex === 1) {
+                if (cell.cellIndex === 1 || cell.cellIndex === 2) {
                     cell.removeEventListener('click', function() {
-                        if (cell.cellIndex === 0) showDropdown(this);
+                        if (cell.cellIndex === 1) showDropdown(this);
                         else showDropdownEnt(this);
                     });
                 }
@@ -337,7 +339,7 @@ WHERE
         // Function to show account dropdown
         function showDropdown(element) {
             // Only proceed if this is the first column
-            if (element.cellIndex !== 0) return;
+            if (element.cellIndex !== 1) return;
             if (element.querySelector('.account-dropdown')) return;
 
             // Create a dropdown element
@@ -405,7 +407,7 @@ WHERE
         // Function to show entity dropdown
         function showDropdownEnt(element) {
             // Only proceed if this is the second column
-            if (element.cellIndex !== 1) return;
+            if (element.cellIndex !== 2) return;
             if (element.querySelector('.entity-dropdown')) return;
 
             // Create a dropdown element
@@ -435,6 +437,11 @@ WHERE
                         defaultOption.text = 'Select an entity';
                         defaultOption.value = '';
                         dropdown.add(defaultOption);
+
+                        const nullOption = document.createElement('option');
+                        nullOption.text = '-';
+                        nullOption.value = null;
+                        dropdown.add(nullOption);
 
                         // Add options from the fetched data
                         data.forEach(entity => {
@@ -471,6 +478,52 @@ WHERE
         }
 
         // Toggle edit mode
+
+
+        // Log the array to the console
+
+
+        function sendDataToPHP() {
+
+            const tableData = [];
+            document.querySelectorAll('table tbody tr').forEach(row => {
+                const urlParams = new URLSearchParams(window.location.search);
+                const entryID = urlParams.get('EntryID');
+                const rowData = {
+                    entryID: entryID,
+                    lineId: row.cells[0].textContent.trim(),
+                    account: row.cells[1].textContent.trim().split(' - ')[0],
+                    entity: row.cells[2].textContent.trim().split(' - ')[0] === '-' ? null : row.cells[2].textContent.trim().split(' - ')[0],
+                    label: row.cells[3].textContent.trim(),
+                    debit: row.cells[4].textContent.trim(),
+                    credit: row.cells[5].textContent.trim()
+                };
+                tableData.push(rowData);
+            });
+            console.log(tableData);
+
+            fetch('update_journal.php', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(tableData)
+                })
+                .then(response => response.json())
+                .then(data => {
+                    console.log('Success:', data);
+                    // Handle success (e.g., show a success message to the user)
+                })
+                .catch((error) => {
+                    console.error('Error:', error);
+                    // Handle error (e.g., show an error message to the user)
+                });
+
+        }
+
+
+
+
         let editMode = false;
         document.querySelector('.filter-buttons button').addEventListener('click', function() {
             editMode = !editMode;
@@ -480,8 +533,7 @@ WHERE
             } else {
                 this.textContent = 'Edit';
                 disableEditing();
-                // Here you would typically send the updated data to the server
-                console.log('Save changes to the server');
+                sendDataToPHP(); // Send data to PHP when saving
             }
         });
 
