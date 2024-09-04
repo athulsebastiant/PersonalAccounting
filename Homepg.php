@@ -170,13 +170,6 @@ if (!isset($_SESSION['username'])) {
             </a>
         </div>
     </div>
-    <script>
-        addEventListener(window.onload, showAlert());
-
-        function showAlert() {
-            alert("Welcome <?php echo htmlspecialchars($_SESSION['username']); ?>");
-        }
-    </script>
 
 </body>
 

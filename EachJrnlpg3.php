@@ -484,24 +484,49 @@ WHERE
 
 
         function sendDataToPHP() {
-
             const tableData = [];
+            let totalDebit = 0;
+            let totalCredit = 0;
+            let valid = true;
+
             document.querySelectorAll('table tbody tr').forEach(row => {
                 const urlParams = new URLSearchParams(window.location.search);
                 const entryID = urlParams.get('EntryID');
+                const label = row.cells[3].textContent.trim();
+                const debit = parseFloat(row.cells[4].textContent.trim()) || 0;
+                const credit = parseFloat(row.cells[5].textContent.trim()) || 0;
+
+                if (!label) {
+                    alert('Label field cannot be empty.');
+                    valid = false;
+                    return;
+                }
+
+                totalDebit += debit;
+                totalCredit += credit;
+
                 const rowData = {
                     entryID: entryID,
                     lineId: row.cells[0].textContent.trim(),
                     account: row.cells[1].textContent.trim().split(' - ')[0],
                     entity: row.cells[2].textContent.trim().split(' - ')[0] === '-' ? null : row.cells[2].textContent.trim().split(' - ')[0],
-                    label: row.cells[3].textContent.trim(),
-                    debit: row.cells[4].textContent.trim(),
-                    credit: row.cells[5].textContent.trim()
+                    label: label,
+                    debit: debit,
+                    credit: credit
                 };
                 tableData.push(rowData);
             });
-            console.log(tableData);
 
+            if (!valid) {
+                return;
+            }
+
+            if (totalDebit !== totalCredit) {
+                alert('Total debit must equal total credit.');
+                return;
+            }
+
+            console.log(tableData);
             fetch('update_journal.php', {
                     method: 'POST',
                     headers: {
@@ -511,12 +536,17 @@ WHERE
                 })
                 .then(response => response.json())
                 .then(data => {
-                    console.log('Success:', data);
-                    // Handle success (e.g., show a success message to the user)
+                    if (data.status === 'success') {
+                        alert('Journal entries updated successfully!');
+                        // Handle success (e.g., show a success message to the user)
+                    } else {
+                        alert('Error updating journal entries:\n' + data.details.join('\n'));
+                        // Handle error (e.g., show an error message to the user)
+                    }
                 })
                 .catch((error) => {
                     console.error('Error:', error);
-                    // Handle error (e.g., show an error message to the user)
+                    alert('An error occurred while updating journal entries. Please try again later.');
                 });
 
         }
