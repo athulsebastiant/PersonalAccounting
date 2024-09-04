@@ -174,6 +174,30 @@ $result = $conn->query($sql);
     <br>
 
     <script>
+        let isEditMode = false;
+
+        function toggleEditMode() {
+            isEditMode = !isEditMode;
+            const editButton = document.querySelector(".edit-button");
+            editButton.textContent = isEditMode ? "Save Changes" : "Edit";
+
+            const accountNameCells = document.querySelectorAll("table tbody tr td:nth-child(2)"); // Select Account Name cells
+            accountNameCells.forEach(cell => {
+                if (isEditMode) {
+                    cell.setAttribute("contenteditable", "true"); // Make cell editable
+                    cell.style.border = "1px solid #ccc"; // Optional: Add a border to indicate it's editable
+                } else {
+                    cell.removeAttribute("contenteditable"); // Make cell non-editable
+                    cell.style.border = ""; // Remove border when not in edit mode
+                }
+            });
+
+            // Optionally, handle any logic needed when changes are saved
+            if (!isEditMode) {
+                alert("Changes saved locally!"); // You can replace this with any action you want
+            }
+        }
+
         function addNewRow() {
             var table = document.querySelector("table tbody");
             var newRow = document.createElement("tr");
@@ -317,6 +341,7 @@ $result = $conn->query($sql);
         <!-- New button to add a new row -->
         <button class="new-button" onclick="addNewRow()">New</button>
         <button class="save-button" id="saveButton" style="display:none;" onclick="saveNewRows()">Save</button>
+        <button class="edit-button" id="edit-button" onclick="toggleEditMode()">Edit</button>
     </div>
 
     <table>
