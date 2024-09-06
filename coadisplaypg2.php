@@ -193,10 +193,59 @@ $result = $conn->query($sql);
             });
 
             // Optionally, handle any logic needed when changes are saved
-            if (!isEditMode) {
+            /*if (!isEditMode) {
                 alert("Changes saved locally!"); // You can replace this with any action you want
-            }
+            }*/
         }
+
+        document.addEventListener("DOMContentLoaded", function() {
+            // Add event listeners to editable AccountName cells
+            const accountNameCells = document.querySelectorAll("table tbody tr td:nth-child(2)"); // Select Account Name cells
+            accountNameCells.forEach(cell => {
+                cell.addEventListener("blur", function() { // 'blur' event when the cell loses focus
+                    if (isEditMode) { // Ensure we're in edit mode
+                        const accountNo = this.parentElement.querySelector("td:first-child").textContent.trim();
+                        const newAccountName = this.textContent.trim();
+
+                        if (accountNo && newAccountName) {
+                            // Send AJAX request to update AccountName
+                            updateAccountName(accountNo, newAccountName);
+                        }
+                    }
+                });
+            });
+        });
+
+        function updateAccountName(accountNo, newAccountName) {
+            fetch('update_account_name.php', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        AccountNo: accountNo,
+                        AccountName: newAccountName
+                    }),
+                })
+                .then(response => response.json())
+                .then(result => {
+                    if (result.status === 'success') {
+                        alert('Account name updated successfully!');
+                        toggleEditMode();
+                    } else {
+                        console.error('Error updating account name:', result.message);
+                        alert('Failed to update account name: ' + result.message);
+                    }
+                })
+                .catch(error => {
+                    console.error('Fetch error:', error);
+                    alert('Fetch error: ' + error.message);
+                });
+        }
+
+
+
+
 
         function addNewRow() {
             var table = document.querySelector("table tbody");
@@ -235,51 +284,7 @@ $result = $conn->query($sql);
         }
 
         function saveNewRows() {
-            /*var rows = document.querySelectorAll("table tbody tr.new-row");
-            var newRows = [];
 
-            rows.forEach(function(row) {
-                var accountNo = row.querySelector("input[name='AccountNo']").value;
-                var accountName = row.querySelector("input[name='AccountName']").value;
-                var subcategory = row.querySelector("select[name='SubcategoryName']").value;
-
-                if (accountNo && accountName && subcategory) {
-                    var [categoryID, subcategoryID] = subcategory.split(",");
-                    newRows.push({
-                        AccountNo: accountNo,
-                        AccountName: accountName,
-                        CategoryID: categoryID,
-                        SubcategoryID: subcategoryID
-                    });
-                }
-            });
-
-            if (newRows.length > 0) {
-                var xhr = new XMLHttpRequest();
-                xhr.open("POST", "insert_account.php", true);
-                xhr.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
-                xhr.onreadystatechange = function() {
-                    if (xhr.readyState == 4) {
-                        if (xhr.status == 200) {
-                            try {
-                                var response = JSON.parse(xhr.responseText);
-                                if (response.status === "success") {
-                                    alert("Data saved successfully!");
-                                    location.reload();
-                                } else {
-                                    alert("Failed to save data: " + response.message);
-                                }
-                            } catch (e) {
-                                console.error("Server response:", xhr.responseText);
-                                alert("Error parsing server response. Check console for details.");
-                            }
-                        } else {
-                            alert("Server error: " + xhr.status);
-                        }
-                    }
-                };
-            }
-                */
             var rows = document.querySelectorAll("table tbody tr.new-row");
             var newRows = [];
 

@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Aug 04, 2024 at 06:20 AM
+-- Generation Time: Sep 05, 2024 at 07:01 PM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -255,6 +255,63 @@ SELECT * from jrlList;
 
 END$$
 
+CREATE DEFINER=`root`@`localhost` PROCEDURE `InsertCOAData` (IN `p_AccountNo` INT, IN `p_AccountName` VARCHAR(255), IN `p_CategoryID` INT, IN `p_SubcategoryID` INT)   BEGIN
+    INSERT INTO coa (AccountNo, AccountName, CategoryID, SubcategoryID)
+    VALUES (p_AccountNo, p_AccountName, p_CategoryID, p_SubcategoryID);
+END$$
+
+CREATE DEFINER=`root`@`localhost` PROCEDURE `InsertCOAData2` (IN `p_AccountNo` INT, IN `p_AccountName` VARCHAR(50), IN `p_CategoryID` INT, IN `p_SubcategoryID` INT, OUT `p_status` VARCHAR(10))   BEGIN
+    DECLARE EXIT HANDLER FOR SQLEXCEPTION
+    BEGIN
+        -- Rollback the transaction in case of an error
+        ROLLBACK;
+        SET p_status = 'fail';
+    END;
+
+    -- Start the transaction
+    START TRANSACTION;
+
+    -- Insert data into the coa table
+    INSERT INTO coa (AccountNo, AccountName, CategoryID, SubcategoryID)
+    VALUES (p_AccountNo, p_AccountName, p_CategoryID, p_SubcategoryID);
+
+    -- Commit the transaction
+    COMMIT;
+    SET p_status = 'success';
+END$$
+
+CREATE DEFINER=`root`@`localhost` PROCEDURE `InsertEntities` (IN `jsonData` JSON)   BEGIN
+    DECLARE i INT DEFAULT 0;
+    DECLARE jsonLength INT;
+    DECLARE entityId VARCHAR(50);
+    DECLARE entityType VARCHAR(50);
+    DECLARE accountNo VARCHAR(50);
+    DECLARE entityName VARCHAR(100);
+    DECLARE mobileNo VARCHAR(20);
+    DECLARE email VARCHAR(100);
+
+    -- Get the length of the JSON array
+    SET jsonLength = JSON_LENGTH(jsonData);
+
+    -- Loop through the JSON array
+    WHILE i < jsonLength DO
+        -- Extract values from the JSON array
+        SET entityId = JSON_UNQUOTE(JSON_EXTRACT(jsonData, CONCAT('$[', i, '].entityId')));
+        SET entityType = JSON_UNQUOTE(JSON_EXTRACT(jsonData, CONCAT('$[', i, '].type')));
+        SET accountNo = JSON_UNQUOTE(JSON_EXTRACT(jsonData, CONCAT('$[', i, '].account')));
+        SET entityName = JSON_UNQUOTE(JSON_EXTRACT(jsonData, CONCAT('$[', i, '].name')));
+        SET mobileNo = JSON_UNQUOTE(JSON_EXTRACT(jsonData, CONCAT('$[', i, '].mobile')));
+        SET email = JSON_UNQUOTE(JSON_EXTRACT(jsonData, CONCAT('$[', i, '].email')));
+
+        -- Insert the data into the entity table
+        INSERT INTO entity(EntityId, type, AccountNo, name, mobileNo, email)
+        VALUES (entityId, entityType, accountNo, entityName, mobileNo, email);
+
+        -- Increment the counter
+        SET i = i + 1;
+    END WHILE;
+END$$
+
 CREATE DEFINER=`root`@`localhost` PROCEDURE `pandl3` ()   BEGIN
 CREATE TEMPORARY TABLE profittable
 SELECT ROW_NUMBER() OVER(order BY AccountID) AS row_num, AccountID,SPACE(50) as AccountName,SUM(CREDITAmount-debitAmount) as credit
@@ -471,6 +528,261 @@ select * from pl;
 
 END$$
 
+CREATE DEFINER=`root`@`localhost` PROCEDURE `YourStoredProcedure` (IN `p_jdate` VARCHAR(255), IN `p_description` TEXT, IN `p_entries` JSON)   BEGIN
+    -- Declare variables to store the output
+    DECLARE v_output TEXT;
+
+    -- Create the output string
+    SET v_output = CONCAT(
+        'Journal Date: ', p_jdate, '\n',
+        'Description: ', p_description, '\n',
+        'Entries: ', p_entries
+    );
+
+    -- Output the result
+    SELECT v_output AS result;
+
+    -- If you want to insert this data into a table, you could do something like this:
+    -- (Assuming you have a table named 'journal_entries' with appropriate columns)
+    -- INSERT INTO journal_entries (jdate, description, entries)
+    -- VALUES (p_jdate, p_description, p_entries);
+
+END$$
+
+CREATE DEFINER=`root`@`localhost` PROCEDURE `YourStoredProcedure1` (IN `p_jdate` DATE, IN `p_description` TEXT, IN `p_entries` JSON)   BEGIN
+    DECLARE v_description_id INT;
+    DECLARE v_i INT DEFAULT 0;
+    DECLARE v_done INT DEFAULT FALSE;
+    DECLARE v_account INT;
+    DECLARE v_label VARCHAR(255);
+    DECLARE v_debit DECIMAL(10,2);
+    DECLARE v_credit DECIMAL(10,2);
+
+    -- Insert into jrlmaster
+    INSERT INTO jrlmaster (jdate, `description`, createdDateTime) 
+    VALUES (p_jdate, p_description, CURRENT_TIMESTAMP());
+
+    -- Get the last inserted ID
+    SET v_description_id = LAST_INSERT_ID();
+
+    -- Loop through the entries JSON array
+    WHILE JSON_EXTRACT(p_entries, CONCAT('$[', v_i, ']')) IS NOT NULL DO
+        SET v_account = JSON_UNQUOTE(JSON_EXTRACT(p_entries, CONCAT('$[', v_i, '].account')));
+        SET v_label = JSON_UNQUOTE(JSON_EXTRACT(p_entries, CONCAT('$[', v_i, '].label')));
+        SET v_debit = COALESCE(CAST(JSON_UNQUOTE(JSON_EXTRACT(p_entries, CONCAT('$[', v_i, '].debit'))) AS 				DECIMAL(10,2)), 0.0);
+		SET v_credit = COALESCE(CAST(JSON_UNQUOTE(JSON_EXTRACT(p_entries, CONCAT('$[', v_i, '].credit'))) AS 			DECIMAL(10,2)), 0.0);
+        -- Insert into jrldetailed
+        INSERT INTO jrldetailed (EntryID, LineID, AccountID, `description`, DebitAmount, CreditAmount)
+        VALUES (v_description_id, v_i + 1, v_account, v_label, v_debit, v_credit);
+
+        SET v_i = v_i + 1;
+    END WHILE;
+
+    -- Output the result
+    SELECT CONCAT('Successfully inserted journal entry with ID: ', v_description_id) AS result;
+END$$
+
+CREATE DEFINER=`root`@`localhost` PROCEDURE `YourStoredProcedure2` (IN `p_jdate` DATE, IN `p_description` TEXT, IN `p_entries` JSON, OUT `p_status` VARCHAR(20))   BEGIN
+    DECLARE v_description_id INT;
+    DECLARE v_i INT DEFAULT 0;
+    DECLARE v_account INT;
+    DECLARE v_label VARCHAR(255);
+    DECLARE v_debit DECIMAL(10,2);
+    DECLARE v_credit DECIMAL(10,2);
+
+    -- Declare a handler for any error
+    DECLARE EXIT HANDLER FOR SQLEXCEPTION
+    BEGIN
+        -- Rollback the transaction and set the status to error
+        ROLLBACK;
+        SET p_status = 'error';
+    END;
+
+    -- Start the transaction
+    START TRANSACTION;
+
+    -- Insert into jrlmaster
+    INSERT INTO jrlmaster (jdate, description, createdDateTime) 
+    VALUES (p_jdate, p_description, CURRENT_TIMESTAMP());
+
+    -- Get the last inserted ID
+    SET v_description_id = LAST_INSERT_ID();
+
+    -- Loop through the entries JSON array
+    WHILE JSON_EXTRACT(p_entries, CONCAT('$[', v_i, ']')) IS NOT NULL DO
+        SET v_account = JSON_UNQUOTE(JSON_EXTRACT(p_entries, CONCAT('$[', v_i, '].account')));
+        SET v_label = JSON_UNQUOTE(JSON_EXTRACT(p_entries, CONCAT('$[', v_i, '].label')));
+        SET v_debit = COALESCE(CAST(JSON_UNQUOTE(JSON_EXTRACT(p_entries, CONCAT('$[', v_i, '].debit'))) AS DECIMAL(10,2)), 0.0);
+        SET v_credit = COALESCE(CAST(JSON_UNQUOTE(JSON_EXTRACT(p_entries, CONCAT('$[', v_i, '].credit'))) AS DECIMAL(10,2)), 0.0);
+
+        -- Insert into jrldetailed
+        INSERT INTO jrldetailed (EntryID, LineID, AccountID, description, DebitAmount, CreditAmount)
+        VALUES (v_description_id, v_i + 1, v_account, v_label, v_debit, v_credit);
+
+        SET v_i = v_i + 1;
+    END WHILE;
+
+    -- If everything is successful, commit the transaction and set success status
+    COMMIT;
+    SET p_status = 'success';
+
+END$$
+
+CREATE DEFINER=`root`@`localhost` PROCEDURE `YourStoredProcedure3` (IN `p_jdate` DATE, IN `p_description` TEXT, IN `p_entries` JSON, OUT `p_status` VARCHAR(10))   BEGIN
+    DECLARE v_description_id INT;
+    DECLARE v_i INT DEFAULT 0;
+    DECLARE v_account INT;
+    DECLARE v_entity INT;
+    DECLARE v_label VARCHAR(255);
+    DECLARE v_debit DECIMAL(10,2);
+    DECLARE v_credit DECIMAL(10,2);
+
+    -- Declare a handler for any error
+    DECLARE EXIT HANDLER FOR SQLEXCEPTION
+    BEGIN
+        -- Rollback the transaction and set the status to error
+        ROLLBACK;
+        SET p_status = 'error';
+    END;
+
+    -- Start the transaction
+    START TRANSACTION;
+
+    -- Insert into jrlmaster
+    INSERT INTO jrlmaster (jdate, description, createdDateTime)
+    VALUES (p_jdate, p_description, CURRENT_TIMESTAMP());
+
+    -- Get the last inserted ID
+    SET v_description_id = LAST_INSERT_ID();
+
+    -- Loop through the entries JSON array
+    WHILE JSON_EXTRACT(p_entries, CONCAT('$[', v_i, ']')) IS NOT NULL DO
+        SET v_account = JSON_UNQUOTE(JSON_EXTRACT(p_entries, CONCAT('$[', v_i, '].account')));
+        SET v_entity = JSON_EXTRACT(p_entries, CONCAT('$[', v_i, '].entity'));
+        SET v_label = JSON_UNQUOTE(JSON_EXTRACT(p_entries, CONCAT('$[', v_i, '].label')));
+        SET v_debit = COALESCE(CAST(JSON_UNQUOTE(JSON_EXTRACT(p_entries, CONCAT('$[', v_i, '].debit'))) AS DECIMAL(10,2)), 0.0);
+        SET v_credit = COALESCE(CAST(JSON_UNQUOTE(JSON_EXTRACT(p_entries, CONCAT('$[', v_i, '].credit'))) AS DECIMAL(10,2)), 0.0);
+
+        -- Handle NULL for EntityID
+        IF v_entity IS NULL OR JSON_UNQUOTE(v_entity) = 'null' THEN
+            SET v_entity = NULL;
+        ELSE
+            SET v_entity = CAST(JSON_UNQUOTE(v_entity) AS INT);
+        END IF;
+
+        -- Insert into jrldetailed
+        INSERT INTO jrldetailed (EntryID, LineID, AccountID, EntityID, description, DebitAmount, CreditAmount)
+        VALUES (v_description_id, v_i + 1, v_account, v_entity, v_label, v_debit, v_credit);
+
+        SET v_i = v_i + 1;
+    END WHILE;
+
+    -- If everything is successful, commit the transaction and set success status
+    COMMIT;
+    SET p_status = 'success';
+
+END$$
+
+CREATE DEFINER=`root`@`localhost` PROCEDURE `YourStoredProcedure4` (IN `p_jdate` DATE, IN `p_description` TEXT, IN `p_entries` JSON, OUT `p_status` VARCHAR(10))   BEGIN
+    DECLARE v_description_id INT;
+    DECLARE v_i INT DEFAULT 0;
+    DECLARE v_account INT;
+    DECLARE v_entity INT;
+    DECLARE v_label VARCHAR(255);
+    DECLARE v_debit DECIMAL(10,2);
+    DECLARE v_credit DECIMAL(10,2);
+
+    -- Declare a handler for any error
+    DECLARE EXIT HANDLER FOR SQLEXCEPTION
+    BEGIN
+        -- Rollback the transaction and set the status to error
+        ROLLBACK;
+        SET p_status = 'error';
+    END;
+
+    -- Start the transaction
+    START TRANSACTION;
+
+    -- Insert into jrlmaster
+    INSERT INTO jrlmaster (jdate, description, createdDateTime)
+    VALUES (p_jdate, p_description, CURRENT_TIMESTAMP());
+
+    -- Get the last inserted ID
+    SET v_description_id = LAST_INSERT_ID();
+
+    -- Loop through the entries JSON array
+    WHILE JSON_EXTRACT(p_entries, CONCAT('$[', v_i, ']')) IS NOT NULL DO
+        SET v_account = JSON_UNQUOTE(JSON_EXTRACT(p_entries, CONCAT('$[', v_i, '].account')));
+        SET v_entity = JSON_EXTRACT(p_entries, CONCAT('$[', v_i, '].entity'));
+        SET v_label = JSON_UNQUOTE(JSON_EXTRACT(p_entries, CONCAT('$[', v_i, '].label')));
+        SET v_debit = COALESCE(CAST(JSON_UNQUOTE(JSON_EXTRACT(p_entries, CONCAT('$[', v_i, '].debit'))) AS DECIMAL(10,2)), 0.0);
+        SET v_credit = COALESCE(CAST(JSON_UNQUOTE(JSON_EXTRACT(p_entries, CONCAT('$[', v_i, '].credit'))) AS DECIMAL(10,2)), 0.0);
+
+        -- Insert into jrldetailed
+        INSERT INTO jrldetailed (EntryID, LineID, AccountID, EntityID, description, DebitAmount, CreditAmount)
+        VALUES (v_description_id, v_i + 1, v_account, v_entity, v_label, v_debit, v_credit);
+
+        SET v_i = v_i + 1;
+    END WHILE;
+
+    -- If everything is successful, commit the transaction and set success status
+    COMMIT;
+    SET p_status = 'success';
+
+END$$
+
+CREATE DEFINER=`root`@`localhost` PROCEDURE `YourStoredProcedure5` (IN `p_jdate` DATE, IN `p_description` TEXT, IN `p_entries` JSON, OUT `p_status` VARCHAR(10))   BEGIN
+    DECLARE v_description_id INT;
+    DECLARE v_i INT DEFAULT 0;
+    DECLARE v_account INT;
+    DECLARE v_entity INT;
+    DECLARE v_label VARCHAR(255);
+    DECLARE v_debit DECIMAL(10,2);
+    DECLARE v_credit DECIMAL(10,2);
+    DECLARE v_error_message TEXT;
+
+    -- Declare a handler for any error
+    DECLARE EXIT HANDLER FOR SQLEXCEPTION
+    BEGIN
+        -- Get the error message
+        GET DIAGNOSTICS CONDITION 1 v_error_message = MESSAGE_TEXT;
+        
+        -- Rollback the transaction and set the status to error
+        ROLLBACK;
+        SET p_status = CONCAT('error: ', v_error_message);
+    END;
+
+    -- Start the transaction
+    START TRANSACTION;
+
+    -- Insert into jrlmaster
+    INSERT INTO jrlmaster (jdate, description, createdDateTime)
+    VALUES (p_jdate, p_description, CURRENT_TIMESTAMP());
+
+    -- Get the last inserted ID
+    SET v_description_id = LAST_INSERT_ID();
+
+    -- Loop through the entries JSON array
+    WHILE JSON_EXTRACT(p_entries, CONCAT('$[', v_i, ']')) IS NOT NULL DO
+        SET v_account = JSON_UNQUOTE(JSON_EXTRACT(p_entries, CONCAT('$[', v_i, '].account')));
+        SET v_entity = NULLIF(JSON_UNQUOTE(JSON_EXTRACT(p_entries, CONCAT('$[', v_i, '].entity'))), 'null');
+        SET v_label = JSON_UNQUOTE(JSON_EXTRACT(p_entries, CONCAT('$[', v_i, '].label')));
+        SET v_debit = COALESCE(CAST(JSON_UNQUOTE(JSON_EXTRACT(p_entries, CONCAT('$[', v_i, '].debit'))) AS DECIMAL(10,2)), 0.0);
+        SET v_credit = COALESCE(CAST(JSON_UNQUOTE(JSON_EXTRACT(p_entries, CONCAT('$[', v_i, '].credit'))) AS DECIMAL(10,2)), 0.0);
+
+        -- Insert into jrldetailed
+        INSERT INTO jrldetailed (EntryID, LineID, AccountID, EntityID, description, DebitAmount, CreditAmount)
+        VALUES (v_description_id, v_i + 1, v_account, v_entity, v_label, v_debit, v_credit);
+
+        SET v_i = v_i + 1;
+    END WHILE;
+
+    -- If everything is successful, commit the transaction and set success status
+    COMMIT;
+    SET p_status = 'success';
+
+END$$
+
 DELIMITER ;
 
 -- --------------------------------------------------------
@@ -569,12 +881,15 @@ CREATE TABLE `coa` (
 INSERT INTO `coa` (`AccountNo`, `AccountName`, `CategoryID`, `SubcategoryID`, `createdBy`, `createdDateTime`, `modifiedBy`, `modifiedDateTime`) VALUES
 (11001, 'Cash', 1, 1, NULL, '2024-06-30 05:55:18', NULL, '2024-06-30 05:55:18'),
 (11002, 'Accounts Receivable', 1, 1, NULL, '2024-06-30 05:55:18', NULL, '2024-06-30 05:55:18'),
-(12001, 'Office Equipment', 1, 2, NULL, '2024-06-30 05:55:18', NULL, '2024-06-30 05:55:18'),
+(12001, 'Office Equipments', 1, 2, NULL, '2024-06-30 05:55:18', NULL, '2024-09-05 16:09:26'),
 (12002, 'Machinery', 1, 2, NULL, '2024-06-30 05:55:18', NULL, '2024-06-30 05:55:18'),
-(13001, 'SBI', 1, 3, NULL, '2024-06-30 05:55:18', NULL, '2024-06-30 05:55:18'),
-(13002, 'Fed Bank', 1, 3, NULL, '2024-06-30 05:55:18', NULL, '2024-06-30 05:55:18'),
-(14001, 'Abraham', 1, 4, NULL, '2024-06-30 05:55:18', NULL, '2024-06-30 05:55:18'),
+(12003, 'Ivory Tusks', 1, 2, NULL, '2024-08-11 16:21:46', NULL, '2024-08-11 16:21:46'),
+(13001, 'SBI', 1, 3, NULL, '2024-06-30 05:55:18', NULL, '2024-09-05 16:18:47'),
+(13002, 'Federal Bank', 1, 3, NULL, '2024-06-30 05:55:18', NULL, '2024-09-05 16:05:02'),
+(13003, 'Kotak', 1, 3, NULL, '2024-08-11 16:23:36', NULL, '2024-08-11 16:23:36'),
+(14001, 'Abraham Kumbuckal', 1, 4, NULL, '2024-06-30 05:55:18', NULL, '2024-09-05 16:07:16'),
 (14002, 'KCCL', 1, 4, NULL, '2024-06-30 05:55:18', NULL, '2024-06-30 05:55:18'),
+(14003, 'Roshan Mathews', 1, 4, NULL, '2024-08-11 16:23:36', NULL, '2024-09-05 16:06:10'),
 (15001, 'Raw Materials', 1, 5, NULL, '2024-06-30 05:55:18', NULL, '2024-06-30 05:55:18'),
 (15002, 'Finished Goods', 1, 5, NULL, '2024-06-30 05:55:18', NULL, '2024-06-30 05:55:18'),
 (16001, 'Employee Advances', 1, 6, NULL, '2024-06-30 05:55:18', NULL, '2024-06-30 05:55:18'),
@@ -584,6 +899,9 @@ INSERT INTO `coa` (`AccountNo`, `AccountName`, `CategoryID`, `SubcategoryID`, `c
 (21003, 'Nellenkuzhy', 2, 1, NULL, '2024-06-30 05:55:18', NULL, '2024-06-30 05:55:18'),
 (21004, 'KSEB', 2, 1, NULL, '2024-06-30 05:55:18', NULL, '2024-06-30 05:55:18'),
 (21005, 'Marian College', 2, 1, NULL, '2024-06-30 05:55:18', NULL, '2024-06-30 05:55:18'),
+(21006, 'Open Kitchen', 2, 1, NULL, '2024-08-14 03:10:42', NULL, '2024-08-14 03:10:42'),
+(21007, 'Lulu', 2, 1, NULL, '2024-08-14 03:11:56', NULL, '2024-08-14 03:11:56'),
+(21008, 'Max', 2, 1, NULL, '2024-08-14 03:11:56', NULL, '2024-08-14 03:11:56'),
 (22001, 'Mortgage Payable', 2, 2, NULL, '2024-06-30 05:55:18', NULL, '2024-06-30 05:55:18'),
 (22002, 'Bonds Payable', 2, 2, NULL, '2024-06-30 05:55:18', NULL, '2024-06-30 05:55:18'),
 (23001, 'Trade Payables', 2, 3, NULL, '2024-06-30 05:55:18', NULL, '2024-06-30 05:55:18'),
@@ -605,6 +923,8 @@ INSERT INTO `coa` (`AccountNo`, `AccountName`, `CategoryID`, `SubcategoryID`, `c
 (44001, 'Rental Income', 4, 4, NULL, '2024-06-30 05:55:18', NULL, '2024-06-30 05:55:18'),
 (45001, 'Stock Market Earnings', 4, 5, NULL, '2024-06-30 05:55:18', NULL, '2024-06-30 05:55:18'),
 (51001, 'General Expenses', 5, 1, NULL, '2024-06-30 05:55:18', NULL, '2024-06-30 05:55:18'),
+(51003, 'Gym Membership', 5, 1, NULL, '2024-08-27 14:06:20', NULL, '2024-08-27 14:06:20'),
+(51004, 'Therapy Expense', 5, 1, NULL, '2024-08-29 03:39:39', NULL, '2024-08-29 03:39:39'),
 (52001, 'Salaries Expense', 5, 2, NULL, '2024-06-30 05:55:18', NULL, '2024-06-30 05:55:18'),
 (52002, 'Wages Expense', 5, 2, NULL, '2024-06-30 05:55:18', NULL, '2024-06-30 05:55:18'),
 (53001, 'Office Rent', 5, 3, NULL, '2024-06-30 05:55:18', NULL, '2024-06-30 05:55:18'),
@@ -628,13 +948,24 @@ CREATE TABLE `entity` (
   `type` varchar(20) NOT NULL,
   `AccountNo` int(11) NOT NULL,
   `name` varchar(60) NOT NULL,
-  `mobileNo` int(11) DEFAULT NULL,
+  `mobileNo` bigint(20) DEFAULT NULL,
   `email` varchar(254) DEFAULT NULL,
   `createdBy` varchar(50) DEFAULT NULL,
   `createdDateTime` timestamp NOT NULL DEFAULT current_timestamp(),
   `modifiedBy` varchar(50) DEFAULT NULL,
   `modifiedDateTime` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `entity`
+--
+
+INSERT INTO `entity` (`EntityID`, `type`, `AccountNo`, `name`, `mobileNo`, `email`, `createdBy`, `createdDateTime`, `modifiedBy`, `modifiedDateTime`) VALUES
+(1, 'Customer', 21007, 'Lulu Hypermarket', 8945110969, 'luluhm@outlook.com', NULL, '2024-08-20 04:46:32', NULL, '2024-09-05 16:55:10'),
+(2, 'Customer', 14002, 'KCCL Ltd.', 2147483647, 'kcclin@gmail.com', NULL, '2024-08-20 04:46:32', NULL, '2024-08-20 04:46:32'),
+(3, 'Customer', 14003, 'Roshan Mathews', 8892421246, 'rm11@gmail.com', NULL, '2024-08-22 03:37:25', NULL, '2024-08-22 03:37:25'),
+(4, 'Supplier', 21003, 'Tomy N', 5571236025, 'nn23@gmail.com', NULL, '2024-08-22 03:39:13', NULL, '2024-08-22 03:39:13'),
+(5, 'Supplier', 21005, 'Marian College Kuttikkanam', 5166676513, 'mcka@gmail.com', NULL, '2024-08-22 03:43:13', NULL, '2024-08-22 03:43:13');
 
 -- --------------------------------------------------------
 
@@ -661,8 +992,8 @@ CREATE TABLE `jrldetailed` (
 --
 
 INSERT INTO `jrldetailed` (`EntryID`, `LineID`, `AccountID`, `EntityID`, `description`, `DebitAmount`, `CreditAmount`, `createdBy`, `createdDateTime`, `modifiedBy`, `modifiedDateTime`) VALUES
-(1, 1, 13001, NULL, 'opening balance', 20000.00, 0.00, NULL, '2024-06-30 05:55:19', NULL, '2024-06-30 05:55:19'),
-(1, 2, 11001, NULL, 'opening balance', 0.00, 20000.00, NULL, '2024-06-30 05:55:19', NULL, '2024-06-30 05:55:19'),
+(1, 1, 13001, NULL, 'opening balance', 20000.00, 0.00, NULL, '2024-06-30 05:55:19', NULL, '2024-09-04 04:32:18'),
+(1, 2, 11001, NULL, 'opening balance', 0.00, 20000.00, NULL, '2024-06-30 05:55:19', NULL, '2024-09-04 04:25:52'),
 (2, 1, 54001, NULL, 'paying electricity', 1000.00, 0.00, NULL, '2024-06-30 05:55:19', NULL, '2024-06-30 05:55:19'),
 (2, 2, 11001, NULL, 'paying electricity', 0.00, 1000.00, NULL, '2024-06-30 05:55:19', NULL, '2024-06-30 05:55:19'),
 (3, 1, 11001, NULL, 'taking some cash', 3000.00, 0.00, NULL, '2024-06-30 05:55:19', NULL, '2024-06-30 05:55:19'),
@@ -688,7 +1019,22 @@ INSERT INTO `jrldetailed` (`EntryID`, `LineID`, `AccountID`, `EntityID`, `descri
 (13, 1, 59001, NULL, 'donation', 36000.00, 0.00, NULL, '2024-06-30 05:55:19', NULL, '2024-06-30 05:55:19'),
 (13, 2, 11001, NULL, 'reducing from cash', 0.00, 36000.00, NULL, '2024-06-30 05:55:19', NULL, '2024-06-30 05:55:19'),
 (25, 1, 57001, NULL, 'buying pizza', 200.00, 0.00, NULL, '2024-08-02 14:48:44', NULL, '2024-08-02 14:48:44'),
-(25, 2, 13001, NULL, 'paying from sbi', 0.00, 200.00, NULL, '2024-08-02 14:48:44', NULL, '2024-08-02 14:48:44');
+(25, 2, 13001, NULL, 'paying from sbi', 0.00, 200.00, NULL, '2024-08-02 14:48:44', NULL, '2024-08-02 14:48:44'),
+(31, 1, 13001, NULL, 'int', 200.00, 0.00, NULL, '2024-08-08 05:34:32', NULL, '2024-08-08 05:34:32'),
+(31, 2, 43001, NULL, 'int', 0.00, 200.00, NULL, '2024-08-08 05:34:32', NULL, '2024-08-08 05:34:32'),
+(32, 1, 12002, NULL, 'buying a machinery', 0.00, 0.00, NULL, '2024-08-11 04:01:05', NULL, '2024-08-11 04:01:05'),
+(32, 2, 13001, NULL, 'buying a machinery', 0.00, 0.00, NULL, '2024-08-11 04:01:05', NULL, '2024-08-11 04:01:05'),
+(33, 1, 12002, NULL, 'Secondary machinery', 1000.00, 0.00, NULL, '2024-08-11 04:13:12', NULL, '2024-08-11 04:13:12'),
+(33, 2, 13001, NULL, 'buying secondary machinery', 0.00, 1000.00, NULL, '2024-08-11 04:13:12', NULL, '2024-08-11 04:13:12'),
+(34, 1, 14003, NULL, 'Paying roshan', 500.00, 0.00, NULL, '2024-08-25 04:14:59', NULL, '2024-08-25 04:14:59'),
+(34, 2, 13001, NULL, 'Money from Sbi', 0.00, 500.00, NULL, '2024-08-25 04:14:59', NULL, '2024-08-25 04:14:59'),
+(35, 1, 14003, 3, 'Paid roshan', 500.00, 0.00, NULL, '2024-08-25 04:17:01', NULL, '2024-08-31 08:39:04'),
+(35, 2, 13001, NULL, 'From SBI', 0.00, 500.00, NULL, '2024-08-25 04:17:01', NULL, '2024-08-25 04:17:01'),
+(38, 1, 54001, NULL, 'ee', 300.00, 0.00, NULL, '2024-08-25 05:25:19', NULL, '2024-08-25 05:25:19'),
+(38, 2, 21004, NULL, 'kseb', 0.00, 300.00, NULL, '2024-08-25 05:25:19', NULL, '2024-08-25 05:25:19'),
+(54, 1, 51003, NULL, 'Paid gym fee', 250.00, 0.00, NULL, '2024-08-29 04:41:56', NULL, '2024-08-29 04:41:56'),
+(54, 2, 13001, NULL, 'sbi', 0.00, 150.00, NULL, '2024-08-29 04:41:56', NULL, '2024-08-29 04:41:56'),
+(54, 3, 11001, NULL, 'cash', 0.00, 100.00, NULL, '2024-08-29 04:41:56', NULL, '2024-08-29 04:41:56');
 
 -- --------------------------------------------------------
 
@@ -725,7 +1071,14 @@ INSERT INTO `jrlmaster` (`EntryID`, `jdate`, `description`, `createdBy`, `create
 (12, '2024-01-12', 'food expense on account', 'Athul', '2024-06-30 05:55:19', NULL, '2024-06-30 05:55:19'),
 (13, '2024-01-13', 'making a donation', 'Athul', '2024-06-30 05:55:19', NULL, '2024-06-30 05:55:19'),
 (25, '2024-11-12', 'buying pizza', NULL, '2024-08-02 14:48:44', NULL, '2024-08-02 14:48:44'),
-(30, '2024-11-12', 'trip to buzan', NULL, '2024-08-02 15:40:09', NULL, '2024-08-02 15:40:09');
+(30, '2024-11-12', 'trip to buzan', NULL, '2024-08-02 15:40:09', NULL, '2024-08-02 15:40:09'),
+(31, '2024-06-08', 'Sbi interest', NULL, '2024-08-08 05:34:32', NULL, '2024-08-08 05:34:32'),
+(32, '2024-08-11', 'Bought machinery', NULL, '2024-08-11 04:01:05', NULL, '2024-08-11 04:01:05'),
+(33, '2024-08-11', 'Machinery2', NULL, '2024-08-11 04:13:12', NULL, '2024-08-11 04:13:12'),
+(34, '2024-08-25', 'Paying Roshan', NULL, '2024-08-25 04:14:59', NULL, '2024-08-25 04:14:59'),
+(35, '2024-08-25', 'Paying Roshan', NULL, '2024-08-25 04:17:01', NULL, '2024-08-25 04:17:01'),
+(38, '2024-08-25', 'paying electricity bill', NULL, '2024-08-25 05:25:19', NULL, '2024-08-25 05:25:19'),
+(54, '2024-08-29', 'Gym fee', NULL, '2024-08-29 04:41:56', NULL, '2024-08-29 04:41:56');
 
 -- --------------------------------------------------------
 
@@ -761,18 +1114,21 @@ CREATE TABLE `users2` (
   `userId` int(11) NOT NULL,
   `Firstname` varchar(50) NOT NULL,
   `LastName` varchar(50) NOT NULL,
-  `Phone` varchar(11) NOT NULL,
+  `Phone` bigint(20) DEFAULT NULL,
   `email` varchar(254) NOT NULL,
   `username` varchar(12) NOT NULL,
-  `password` varchar(20) NOT NULL
+  `password` varchar(254) NOT NULL,
+  `user_type` varchar(50) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
 -- Dumping data for table `users2`
 --
 
-INSERT INTO `users2` (`userId`, `Firstname`, `LastName`, `Phone`, `email`, `username`, `password`) VALUES
-(1, 'Athul', 'Sebastian', '8921866268', 'athulsebastiant@gmail.com', 'atskingly', '$argon2id$v=19$m=655');
+INSERT INTO `users2` (`userId`, `Firstname`, `LastName`, `Phone`, `email`, `username`, `password`, `user_type`) VALUES
+(3, 'Gin', 'V', 5786812791, 'gg@ff.a', 'gooboy21', '$argon2id$v=19$m=65536,t=4,p=1$bmdwVlAycVpDcjY3VkpLLg$fZCmDwvQ1fl8/za+FikWEbYQF2eg8ORT3RIt/tY2brQ', 'Admin'),
+(4, 'Donny', 'Boss', 6663334578, 'djkhalid@gmail.com', 'DBoss213', '$argon2id$v=19$m=65536,t=4,p=1$ZU9wM2NNUENZMWdqRGpvMA$IZbgBDaYhXL3Oy+X46KB90msaiNHvAiMFbwe0TRDOyU', 'Bookkeeper'),
+(5, 'Sardar', 'P', 1320562965, 'spd22@gmail.com', 'spdAudits', '$argon2id$v=19$m=65536,t=4,p=1$THY5dHZreU9tQW5HeXhkeA$k8ag8OfWTuSVr1GG4oXTgBm8YHfrem+38bhtDM37JqA', 'Auditor');
 
 --
 -- Indexes for dumped tables
@@ -834,19 +1190,25 @@ ALTER TABLE `users`
 --
 ALTER TABLE `users2`
   ADD PRIMARY KEY (`userId`),
-  ADD UNIQUE KEY `Phone` (`Phone`),
   ADD UNIQUE KEY `email` (`email`),
-  ADD UNIQUE KEY `username` (`username`);
+  ADD UNIQUE KEY `username` (`username`),
+  ADD UNIQUE KEY `Phone` (`Phone`);
 
 --
 -- AUTO_INCREMENT for dumped tables
 --
 
 --
+-- AUTO_INCREMENT for table `entity`
+--
+ALTER TABLE `entity`
+  MODIFY `EntityID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
+
+--
 -- AUTO_INCREMENT for table `jrlmaster`
 --
 ALTER TABLE `jrlmaster`
-  MODIFY `EntryID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=31;
+  MODIFY `EntryID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=55;
 
 --
 -- AUTO_INCREMENT for table `users`
@@ -858,7 +1220,7 @@ ALTER TABLE `users`
 -- AUTO_INCREMENT for table `users2`
 --
 ALTER TABLE `users2`
-  MODIFY `userId` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+  MODIFY `userId` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
 
 --
 -- Constraints for dumped tables
@@ -881,8 +1243,7 @@ ALTER TABLE `coa`
 -- Constraints for table `entity`
 --
 ALTER TABLE `entity`
-  ADD CONSTRAINT `entity_ibfk_1` FOREIGN KEY (`AccountNo`) REFERENCES `coa` (`AccountNo`),
-  ADD CONSTRAINT `entity_ibfk_2` FOREIGN KEY (`name`) REFERENCES `coa` (`AccountName`);
+  ADD CONSTRAINT `entity_ibfk_1` FOREIGN KEY (`AccountNo`) REFERENCES `coa` (`AccountNo`);
 
 --
 -- Constraints for table `jrldetailed`
@@ -929,7 +1290,20 @@ INSERT INTO `bookings` (`booking_id`, `event_id`, `user_id`, `num_tickets`, `tot
 (13, 101, 0, 3, 600.00, '2024-07-27 10:31:52'),
 (14, 104, 0, 3, 1200.00, '2024-07-28 12:59:33'),
 (15, 104, 0, 2, 800.00, '2024-07-28 13:04:18'),
-(16, 103, 0, 5, 250.00, '2024-07-28 13:14:26');
+(16, 103, 0, 5, 250.00, '2024-07-28 13:14:26'),
+(17, 104, 0, 2, 800.00, '2024-08-07 12:52:42'),
+(18, 101, 0, 2, 400.00, '2024-08-21 12:15:16'),
+(19, 101, 0, 2, 400.00, '2024-08-21 12:17:02'),
+(20, 101, 0, 2, 400.00, '2024-08-21 12:20:37'),
+(21, 102, 0, 3, 600.00, '2024-09-04 19:17:27'),
+(22, 103, 0, 3, 150.00, '2024-09-05 07:37:30'),
+(23, 103, 0, 2, 100.00, '2024-09-05 07:43:00'),
+(24, 104, 0, 3, 1200.00, '2024-09-05 07:44:26'),
+(25, 103, 0, 9, 450.00, '2024-09-05 07:59:00'),
+(26, 101, 0, 6, 1200.00, '2024-09-05 08:04:19'),
+(27, 102, 0, 7, 1400.00, '2024-09-05 08:07:48'),
+(28, 102, 0, 6, 1200.00, '2024-09-05 08:13:06'),
+(29, 104, 0, 6, 2400.00, '2024-09-05 09:00:36');
 
 -- --------------------------------------------------------
 
@@ -955,10 +1329,10 @@ CREATE TABLE `events` (
 --
 
 INSERT INTO `events` (`event_id`, `title`, `description`, `date`, `time`, `location`, `image`, `total_tickets`, `available_tickets`, `price`) VALUES
-(101, 'Justin Bieber\'s concert', 'JB at Mumbai', '2024-07-31', '21:45:30', 'Mumbai', 'jbconcert.webp', 500, 242, 200.00),
-(102, 'Tedx Mumbai', 'Ted talk season 4', '2024-07-31', '21:45:30', 'Mumbai', 'tedx.jpg', 500, 243, 200.00),
-(103, 'Stand up with Atul Khatri', 'Renowned comedian Atul Khatri takes the audience for a fun time.', '2024-09-12', '10:17:46', 'Mumbai', 'atulkhatri.jpg', 100, 10, 50.00),
-(104, 'IPL - MI vs CSK', 'Mumbai Indians vs Chennai Super Kings', '2024-08-14', '18:36:56', 'Mumbai', 'mi.webp', 600, 445, 400.00);
+(101, 'Justin Bieber\'s concert', 'JB at Mumbai', '2024-11-06', '21:45:30', 'Mumbai', 'jbconcert.webp', 500, 234, 200.00),
+(102, 'Tedx Mumbai', 'Ted talk season 4', '2024-09-26', '21:45:30', 'Mumbai', 'tedx.jpg', 500, 227, 200.00),
+(103, 'Stand up with Atul Khatri', 'Renowned comedian Atul Khatri takes the audience for a fun time.', '2024-09-12', '10:17:46', 'Mumbai', 'atulkhatri.jpg', 100, 1, 50.00),
+(104, 'IPL - MI vs CSK', 'Mumbai Indians vs Chennai Super Kings', '2024-10-16', '18:36:56', 'Mumbai', 'mi.webp', 600, 434, 400.00);
 
 -- --------------------------------------------------------
 
@@ -971,7 +1345,7 @@ CREATE TABLE `payment` (
   `name` varchar(255) DEFAULT NULL,
   `email` varchar(255) DEFAULT NULL,
   `mobile_number` varchar(255) DEFAULT NULL,
-  `payment_amount` decimal(5,2) DEFAULT NULL,
+  `payment_amount` decimal(10,2) DEFAULT NULL,
   `order_id` varchar(10) DEFAULT NULL,
   `order_status` varchar(10) DEFAULT NULL,
   `booking_id` int(10) UNSIGNED NOT NULL
@@ -982,14 +1356,16 @@ CREATE TABLE `payment` (
 --
 
 INSERT INTO `payment` (`id`, `name`, `email`, `mobile_number`, `payment_amount`, `order_id`, `order_status`, `booking_id`) VALUES
-(5, 'Athul Sebastian', 'athulsebastiant@gmail.com', '08921866268', 100.00, 'OR53124169', 'success', 9),
-(6, 'Justin', 'jb23@gmail.com', '01234567891', 400.00, 'OR54275688', 'success', 10),
-(7, 'Ram', 'rrkabel@gg.com', '7453532325', 400.00, 'OR55547962', 'success', 11),
-(8, 'Faf', 'ff@gg.cm', '2121212122121', 150.00, 'OR55739607', 'success', 12),
-(9, 'Raju', 'rr@69hh.com', '212121124', 600.00, 'OR56512058', 'success', 13),
-(10, 'Athul Sebastian', 'athulsebastiant@gmail.com', '08921866268', 999.99, 'OR51773264', 'success', 14),
-(11, 'Athul Sebastian', 'athulsebastiant@gmail.com', '08921866268', 800.00, 'OR52058125', 'success', 15),
-(12, 'Athul Sebastian', 'athulsebastiant@gmail.com', '08921866268', 250.00, 'OR52666257', 'success', 16);
+(0, 'Lilly', 'lillygeorge0225@gmail.com', '08921866267', 400.00, 'OR23037676', 'success', 20),
+(0, 'Sivan', 'sstp@gmail.com', '2034891332', 600.00, 'OR57647301', 'success', 21),
+(0, 'Sivan', 'sstp@gmail.com', '2034891332', 150.00, 'OR02050729', 'pending', 22),
+(0, 'King Sebastian', 'kingsebastiant@gmail.com', '08921866267', 100.00, 'OR02380540', 'pending', 23),
+(0, 'King Sebastian', 'kingsebastiant@gmail.com', '08921866267', 999.99, 'OR02466247', 'success', 24),
+(0, 'Raju', 'rr@69hh.com', '2121211241212', 450.00, 'OR03340107', 'success', 25),
+(0, 'King Sebastian', 'kingsebastiant@gmail.com', '08921866267', 999.99, 'OR03659016', 'success', 26),
+(0, 'Sardar P', 'spd22@gmail.com', '01320562965', 999.99, 'OR03868337', 'success', 27),
+(0, 'Sardar P', 'spd22@gmail.com', '01320562965', 1200.00, 'OR04186280', 'success', 28),
+(0, 'Sardar P', 'spd22@gmail.com', '01320562965', 2400.00, 'OR07036526', 'success', 29);
 
 -- --------------------------------------------------------
 
@@ -1024,13 +1400,6 @@ ALTER TABLE `events`
   ADD PRIMARY KEY (`event_id`);
 
 --
--- Indexes for table `payment`
---
-ALTER TABLE `payment`
-  ADD PRIMARY KEY (`id`),
-  ADD UNIQUE KEY `booking_id` (`booking_id`);
-
---
 -- Indexes for table `users`
 --
 ALTER TABLE `users`
@@ -1046,19 +1415,13 @@ ALTER TABLE `users`
 -- AUTO_INCREMENT for table `bookings`
 --
 ALTER TABLE `bookings`
-  MODIFY `booking_id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=17;
+  MODIFY `booking_id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=30;
 
 --
 -- AUTO_INCREMENT for table `events`
 --
 ALTER TABLE `events`
   MODIFY `event_id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=105;
-
---
--- AUTO_INCREMENT for table `payment`
---
-ALTER TABLE `payment`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=13;
 
 --
 -- AUTO_INCREMENT for table `users`
@@ -1075,12 +1438,455 @@ ALTER TABLE `users`
 --
 ALTER TABLE `bookings`
   ADD CONSTRAINT `bookings_ibfk_1` FOREIGN KEY (`event_id`) REFERENCES `events` (`event_id`);
+--
+-- Database: `phpmyadmin`
+--
+CREATE DATABASE IF NOT EXISTS `phpmyadmin` DEFAULT CHARACTER SET utf8 COLLATE utf8_bin;
+USE `phpmyadmin`;
+
+-- --------------------------------------------------------
 
 --
--- Constraints for table `payment`
+-- Table structure for table `pma__bookmark`
 --
-ALTER TABLE `payment`
-  ADD CONSTRAINT `fk_payment_bookings` FOREIGN KEY (`booking_id`) REFERENCES `bookings` (`booking_id`);
+
+CREATE TABLE `pma__bookmark` (
+  `id` int(10) UNSIGNED NOT NULL,
+  `dbase` varchar(255) NOT NULL DEFAULT '',
+  `user` varchar(255) NOT NULL DEFAULT '',
+  `label` varchar(255) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT '',
+  `query` text NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_bin COMMENT='Bookmarks';
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `pma__central_columns`
+--
+
+CREATE TABLE `pma__central_columns` (
+  `db_name` varchar(64) NOT NULL,
+  `col_name` varchar(64) NOT NULL,
+  `col_type` varchar(64) NOT NULL,
+  `col_length` text DEFAULT NULL,
+  `col_collation` varchar(64) NOT NULL,
+  `col_isNull` tinyint(1) NOT NULL,
+  `col_extra` varchar(255) DEFAULT '',
+  `col_default` text DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_bin COMMENT='Central list of columns';
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `pma__column_info`
+--
+
+CREATE TABLE `pma__column_info` (
+  `id` int(5) UNSIGNED NOT NULL,
+  `db_name` varchar(64) NOT NULL DEFAULT '',
+  `table_name` varchar(64) NOT NULL DEFAULT '',
+  `column_name` varchar(64) NOT NULL DEFAULT '',
+  `comment` varchar(255) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT '',
+  `mimetype` varchar(255) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT '',
+  `transformation` varchar(255) NOT NULL DEFAULT '',
+  `transformation_options` varchar(255) NOT NULL DEFAULT '',
+  `input_transformation` varchar(255) NOT NULL DEFAULT '',
+  `input_transformation_options` varchar(255) NOT NULL DEFAULT ''
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_bin COMMENT='Column information for phpMyAdmin';
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `pma__designer_settings`
+--
+
+CREATE TABLE `pma__designer_settings` (
+  `username` varchar(64) NOT NULL,
+  `settings_data` text NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_bin COMMENT='Settings related to Designer';
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `pma__export_templates`
+--
+
+CREATE TABLE `pma__export_templates` (
+  `id` int(5) UNSIGNED NOT NULL,
+  `username` varchar(64) NOT NULL,
+  `export_type` varchar(10) NOT NULL,
+  `template_name` varchar(64) NOT NULL,
+  `template_data` text NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_bin COMMENT='Saved export templates';
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `pma__favorite`
+--
+
+CREATE TABLE `pma__favorite` (
+  `username` varchar(64) NOT NULL,
+  `tables` text NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_bin COMMENT='Favorite tables';
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `pma__history`
+--
+
+CREATE TABLE `pma__history` (
+  `id` bigint(20) UNSIGNED NOT NULL,
+  `username` varchar(64) NOT NULL DEFAULT '',
+  `db` varchar(64) NOT NULL DEFAULT '',
+  `table` varchar(64) NOT NULL DEFAULT '',
+  `timevalue` timestamp NOT NULL DEFAULT current_timestamp(),
+  `sqlquery` text NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_bin COMMENT='SQL history for phpMyAdmin';
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `pma__navigationhiding`
+--
+
+CREATE TABLE `pma__navigationhiding` (
+  `username` varchar(64) NOT NULL,
+  `item_name` varchar(64) NOT NULL,
+  `item_type` varchar(64) NOT NULL,
+  `db_name` varchar(64) NOT NULL,
+  `table_name` varchar(64) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_bin COMMENT='Hidden items of navigation tree';
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `pma__pdf_pages`
+--
+
+CREATE TABLE `pma__pdf_pages` (
+  `db_name` varchar(64) NOT NULL DEFAULT '',
+  `page_nr` int(10) UNSIGNED NOT NULL,
+  `page_descr` varchar(50) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT ''
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_bin COMMENT='PDF relation pages for phpMyAdmin';
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `pma__recent`
+--
+
+CREATE TABLE `pma__recent` (
+  `username` varchar(64) NOT NULL,
+  `tables` text NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_bin COMMENT='Recently accessed tables';
+
+--
+-- Dumping data for table `pma__recent`
+--
+
+INSERT INTO `pma__recent` (`username`, `tables`) VALUES
+('root', '[{\"db\":\"ac2\",\"table\":\"entity\"},{\"db\":\"ac2\",\"table\":\"coa\"},{\"db\":\"evm\",\"table\":\"payment\"},{\"db\":\"evm\",\"table\":\"bookings\"},{\"db\":\"evm\",\"table\":\"events\"},{\"db\":\"ac2\",\"table\":\"jrlmaster\"},{\"db\":\"ac2\",\"table\":\"jrldetailed\"}]');
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `pma__relation`
+--
+
+CREATE TABLE `pma__relation` (
+  `master_db` varchar(64) NOT NULL DEFAULT '',
+  `master_table` varchar(64) NOT NULL DEFAULT '',
+  `master_field` varchar(64) NOT NULL DEFAULT '',
+  `foreign_db` varchar(64) NOT NULL DEFAULT '',
+  `foreign_table` varchar(64) NOT NULL DEFAULT '',
+  `foreign_field` varchar(64) NOT NULL DEFAULT ''
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_bin COMMENT='Relation table';
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `pma__savedsearches`
+--
+
+CREATE TABLE `pma__savedsearches` (
+  `id` int(5) UNSIGNED NOT NULL,
+  `username` varchar(64) NOT NULL DEFAULT '',
+  `db_name` varchar(64) NOT NULL DEFAULT '',
+  `search_name` varchar(64) NOT NULL DEFAULT '',
+  `search_data` text NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_bin COMMENT='Saved searches';
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `pma__table_coords`
+--
+
+CREATE TABLE `pma__table_coords` (
+  `db_name` varchar(64) NOT NULL DEFAULT '',
+  `table_name` varchar(64) NOT NULL DEFAULT '',
+  `pdf_page_number` int(11) NOT NULL DEFAULT 0,
+  `x` float UNSIGNED NOT NULL DEFAULT 0,
+  `y` float UNSIGNED NOT NULL DEFAULT 0
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_bin COMMENT='Table coordinates for phpMyAdmin PDF output';
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `pma__table_info`
+--
+
+CREATE TABLE `pma__table_info` (
+  `db_name` varchar(64) NOT NULL DEFAULT '',
+  `table_name` varchar(64) NOT NULL DEFAULT '',
+  `display_field` varchar(64) NOT NULL DEFAULT ''
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_bin COMMENT='Table information for phpMyAdmin';
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `pma__table_uiprefs`
+--
+
+CREATE TABLE `pma__table_uiprefs` (
+  `username` varchar(64) NOT NULL,
+  `db_name` varchar(64) NOT NULL,
+  `table_name` varchar(64) NOT NULL,
+  `prefs` text NOT NULL,
+  `last_update` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_bin COMMENT='Tables'' UI preferences';
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `pma__tracking`
+--
+
+CREATE TABLE `pma__tracking` (
+  `db_name` varchar(64) NOT NULL,
+  `table_name` varchar(64) NOT NULL,
+  `version` int(10) UNSIGNED NOT NULL,
+  `date_created` datetime NOT NULL,
+  `date_updated` datetime NOT NULL,
+  `schema_snapshot` text NOT NULL,
+  `schema_sql` text DEFAULT NULL,
+  `data_sql` longtext DEFAULT NULL,
+  `tracking` set('UPDATE','REPLACE','INSERT','DELETE','TRUNCATE','CREATE DATABASE','ALTER DATABASE','DROP DATABASE','CREATE TABLE','ALTER TABLE','RENAME TABLE','DROP TABLE','CREATE INDEX','DROP INDEX','CREATE VIEW','ALTER VIEW','DROP VIEW') DEFAULT NULL,
+  `tracking_active` int(1) UNSIGNED NOT NULL DEFAULT 1
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_bin COMMENT='Database changes tracking for phpMyAdmin';
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `pma__userconfig`
+--
+
+CREATE TABLE `pma__userconfig` (
+  `username` varchar(64) NOT NULL,
+  `timevalue` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  `config_data` text NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_bin COMMENT='User preferences storage for phpMyAdmin';
+
+--
+-- Dumping data for table `pma__userconfig`
+--
+
+INSERT INTO `pma__userconfig` (`username`, `timevalue`, `config_data`) VALUES
+('root', '2024-09-05 16:35:31', '{\"Console\\/Mode\":\"collapse\"}');
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `pma__usergroups`
+--
+
+CREATE TABLE `pma__usergroups` (
+  `usergroup` varchar(64) NOT NULL,
+  `tab` varchar(64) NOT NULL,
+  `allowed` enum('Y','N') NOT NULL DEFAULT 'N'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_bin COMMENT='User groups with configured menu items';
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `pma__users`
+--
+
+CREATE TABLE `pma__users` (
+  `username` varchar(64) NOT NULL,
+  `usergroup` varchar(64) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_bin COMMENT='Users and their assignments to user groups';
+
+--
+-- Indexes for dumped tables
+--
+
+--
+-- Indexes for table `pma__bookmark`
+--
+ALTER TABLE `pma__bookmark`
+  ADD PRIMARY KEY (`id`);
+
+--
+-- Indexes for table `pma__central_columns`
+--
+ALTER TABLE `pma__central_columns`
+  ADD PRIMARY KEY (`db_name`,`col_name`);
+
+--
+-- Indexes for table `pma__column_info`
+--
+ALTER TABLE `pma__column_info`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `db_name` (`db_name`,`table_name`,`column_name`);
+
+--
+-- Indexes for table `pma__designer_settings`
+--
+ALTER TABLE `pma__designer_settings`
+  ADD PRIMARY KEY (`username`);
+
+--
+-- Indexes for table `pma__export_templates`
+--
+ALTER TABLE `pma__export_templates`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `u_user_type_template` (`username`,`export_type`,`template_name`);
+
+--
+-- Indexes for table `pma__favorite`
+--
+ALTER TABLE `pma__favorite`
+  ADD PRIMARY KEY (`username`);
+
+--
+-- Indexes for table `pma__history`
+--
+ALTER TABLE `pma__history`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `username` (`username`,`db`,`table`,`timevalue`);
+
+--
+-- Indexes for table `pma__navigationhiding`
+--
+ALTER TABLE `pma__navigationhiding`
+  ADD PRIMARY KEY (`username`,`item_name`,`item_type`,`db_name`,`table_name`);
+
+--
+-- Indexes for table `pma__pdf_pages`
+--
+ALTER TABLE `pma__pdf_pages`
+  ADD PRIMARY KEY (`page_nr`),
+  ADD KEY `db_name` (`db_name`);
+
+--
+-- Indexes for table `pma__recent`
+--
+ALTER TABLE `pma__recent`
+  ADD PRIMARY KEY (`username`);
+
+--
+-- Indexes for table `pma__relation`
+--
+ALTER TABLE `pma__relation`
+  ADD PRIMARY KEY (`master_db`,`master_table`,`master_field`),
+  ADD KEY `foreign_field` (`foreign_db`,`foreign_table`);
+
+--
+-- Indexes for table `pma__savedsearches`
+--
+ALTER TABLE `pma__savedsearches`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `u_savedsearches_username_dbname` (`username`,`db_name`,`search_name`);
+
+--
+-- Indexes for table `pma__table_coords`
+--
+ALTER TABLE `pma__table_coords`
+  ADD PRIMARY KEY (`db_name`,`table_name`,`pdf_page_number`);
+
+--
+-- Indexes for table `pma__table_info`
+--
+ALTER TABLE `pma__table_info`
+  ADD PRIMARY KEY (`db_name`,`table_name`);
+
+--
+-- Indexes for table `pma__table_uiprefs`
+--
+ALTER TABLE `pma__table_uiprefs`
+  ADD PRIMARY KEY (`username`,`db_name`,`table_name`);
+
+--
+-- Indexes for table `pma__tracking`
+--
+ALTER TABLE `pma__tracking`
+  ADD PRIMARY KEY (`db_name`,`table_name`,`version`);
+
+--
+-- Indexes for table `pma__userconfig`
+--
+ALTER TABLE `pma__userconfig`
+  ADD PRIMARY KEY (`username`);
+
+--
+-- Indexes for table `pma__usergroups`
+--
+ALTER TABLE `pma__usergroups`
+  ADD PRIMARY KEY (`usergroup`,`tab`,`allowed`);
+
+--
+-- Indexes for table `pma__users`
+--
+ALTER TABLE `pma__users`
+  ADD PRIMARY KEY (`username`,`usergroup`);
+
+--
+-- AUTO_INCREMENT for dumped tables
+--
+
+--
+-- AUTO_INCREMENT for table `pma__bookmark`
+--
+ALTER TABLE `pma__bookmark`
+  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `pma__column_info`
+--
+ALTER TABLE `pma__column_info`
+  MODIFY `id` int(5) UNSIGNED NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `pma__export_templates`
+--
+ALTER TABLE `pma__export_templates`
+  MODIFY `id` int(5) UNSIGNED NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `pma__history`
+--
+ALTER TABLE `pma__history`
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `pma__pdf_pages`
+--
+ALTER TABLE `pma__pdf_pages`
+  MODIFY `page_nr` int(10) UNSIGNED NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `pma__savedsearches`
+--
+ALTER TABLE `pma__savedsearches`
+  MODIFY `id` int(5) UNSIGNED NOT NULL AUTO_INCREMENT;
+--
+-- Database: `test`
+--
+CREATE DATABASE IF NOT EXISTS `test` DEFAULT CHARACTER SET latin1 COLLATE latin1_swedish_ci;
+USE `test`;
 COMMIT;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;

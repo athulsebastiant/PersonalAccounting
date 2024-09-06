@@ -174,6 +174,30 @@ $result = $conn->query($sql);
     <br>
 
     <script>
+        let isEditMode = false;
+
+        function toggleEditMode() {
+            isEditMode = !isEditMode;
+            const editButton = document.querySelector(".edit-button");
+            editButton.textContent = isEditMode ? "Save Changes" : "Edit";
+
+            const accountNameCells = document.querySelectorAll("table tbody tr td:nth-child(2)"); // Select Account Name cells
+            accountNameCells.forEach(cell => {
+                if (isEditMode) {
+                    cell.setAttribute("contenteditable", "true"); // Make cell editable
+                    cell.style.border = "1px solid #ccc"; // Optional: Add a border to indicate it's editable
+                } else {
+                    cell.removeAttribute("contenteditable"); // Make cell non-editable
+                    cell.style.border = ""; // Remove border when not in edit mode
+                }
+            });
+
+            // Optionally, handle any logic needed when changes are saved
+            if (!isEditMode) {
+                alert("Changes saved locally!"); // You can replace this with any action you want
+            }
+        }
+
         function addNewRow() {
             var table = document.querySelector("table tbody");
             var newRow = document.createElement("tr");
@@ -211,51 +235,7 @@ $result = $conn->query($sql);
         }
 
         function saveNewRows() {
-            /*var rows = document.querySelectorAll("table tbody tr.new-row");
-            var newRows = [];
 
-            rows.forEach(function(row) {
-                var accountNo = row.querySelector("input[name='AccountNo']").value;
-                var accountName = row.querySelector("input[name='AccountName']").value;
-                var subcategory = row.querySelector("select[name='SubcategoryName']").value;
-
-                if (accountNo && accountName && subcategory) {
-                    var [categoryID, subcategoryID] = subcategory.split(",");
-                    newRows.push({
-                        AccountNo: accountNo,
-                        AccountName: accountName,
-                        CategoryID: categoryID,
-                        SubcategoryID: subcategoryID
-                    });
-                }
-            });
-
-            if (newRows.length > 0) {
-                var xhr = new XMLHttpRequest();
-                xhr.open("POST", "insert_account.php", true);
-                xhr.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
-                xhr.onreadystatechange = function() {
-                    if (xhr.readyState == 4) {
-                        if (xhr.status == 200) {
-                            try {
-                                var response = JSON.parse(xhr.responseText);
-                                if (response.status === "success") {
-                                    alert("Data saved successfully!");
-                                    location.reload();
-                                } else {
-                                    alert("Failed to save data: " + response.message);
-                                }
-                            } catch (e) {
-                                console.error("Server response:", xhr.responseText);
-                                alert("Error parsing server response. Check console for details.");
-                            }
-                        } else {
-                            alert("Server error: " + xhr.status);
-                        }
-                    }
-                };
-            }
-                */
             var rows = document.querySelectorAll("table tbody tr.new-row");
             var newRows = [];
 
@@ -317,6 +297,7 @@ $result = $conn->query($sql);
         <!-- New button to add a new row -->
         <button class="new-button" onclick="addNewRow()">New</button>
         <button class="save-button" id="saveButton" style="display:none;" onclick="saveNewRows()">Save</button>
+        <button class="edit-button" id="edit-button" onclick="toggleEditMode()">Edit</button>
     </div>
 
     <table>
