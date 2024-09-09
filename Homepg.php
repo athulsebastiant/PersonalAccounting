@@ -169,6 +169,13 @@ if (!isset($_SESSION['username'])) {
                 <p>Click here to access Entities</p>
             </a>
         </div>
+
+        <div class="content-div">
+            <a href="UserControl.php">
+                <h2>Manage User Privileges</h2>
+                <p>Click here to access User Privileges</p>
+            </a>
+        </div>
     </div>
 
 </body>

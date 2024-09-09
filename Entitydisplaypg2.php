@@ -141,6 +141,55 @@ $result = $conn->query($sql);
         .filter-buttons button:hover {
             background-color: #45a049;
         }
+
+
+
+        /* Common Button Styles */
+        .table-button {
+            vertical-align: middle;
+            padding: 8px 16px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            /* Rounded corners */
+            cursor: pointer;
+            font-size: 14px;
+            transition: background-color 0.3s, transform 0.2s;
+            /* Smooth transitions */
+            margin: 4px;
+            /* Space between buttons */
+        }
+
+        .table-button:hover {
+            background-color: #45a049;
+            /* Darken on hover */
+            transform: translateY(-2px);
+            /* Slight lift on hover */
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            /* Shadow effect */
+        }
+
+        /* Edit Button Specific Style */
+        .table-button.edit {
+            background-color: #ffa500;
+            /* Orange color for edit */
+        }
+
+        .table-button.edit:hover {
+            background-color: #ff8c00;
+            /* Darker orange on hover */
+        }
+
+        .table-button.save {
+            background-color: #ffa500;
+            /* Orange color for save */
+        }
+
+        .table-button.save:hover {
+            background-color: #ff8c00;
+            /* Darker orange on hover */
+        }
     </style>
     <script>
         function addNewRow() {
@@ -316,6 +365,59 @@ $result = $conn->query($sql);
             };
             xhr.send(JSON.stringify(rowsData));
         };
+
+
+        function enterEditMode(row) {
+            // Enter edit mode for a specific row
+            var typeCell = row.querySelector("td:nth-child(2)");
+            var nameCell = row.querySelector("td:nth-child(4)");
+            var mobileCell = row.querySelector("td:nth-child(5)");
+            var emailCell = row.querySelector("td:nth-child(6)");
+
+            // Replace text with input fields or dropdowns for editing
+            typeCell.innerHTML = `<select>
+                                    <option value="Customer">Customer</option>
+                                    <option value="Supplier">Supplier</option>
+                                  </select>`;
+            nameCell.innerHTML = `<input type="text" value="${nameCell.textContent.trim()}">`;
+            mobileCell.innerHTML = `<input type="text" value="${mobileCell.textContent.trim()}">`;
+            emailCell.innerHTML = `<input type="text" value="${emailCell.textContent.trim()}">`;
+
+            // Add a "Save" button to the row
+            var saveButton = document.createElement("button");
+            saveButton.textContent = "Save";
+            saveButton.classList.add("table-button", "save"); // Add both classes
+            saveButton.style.height = "32px";
+            saveButton.onclick = function() {
+                saveRow(row);
+            };
+            row.appendChild(saveButton);
+        }
+
+        function saveRow(row) {
+            var entityId = row.querySelector("td:nth-child(1)").textContent.trim();
+            var type = row.querySelector("td:nth-child(2) select").value;
+            var name = row.querySelector("td:nth-child(4) input").value;
+            var mobile = row.querySelector("td:nth-child(5) input").value;
+            var email = row.querySelector("td:nth-child(6) input").value;
+
+            // Send data to the server to update the row
+            var xhr = new XMLHttpRequest();
+            xhr.open("POST", "update_entity.php", true);
+            xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
+            xhr.onreadystatechange = function() {
+                if (xhr.readyState == 4 && xhr.status == 200) {
+                    var response = JSON.parse(xhr.responseText);
+                    if (response.status === "success") {
+                        alert(response.message);
+                        location.reload(); // Reload the page to see the changes
+                    } else {
+                        alert("Error: " + response.message);
+                    }
+                }
+            };
+            xhr.send("entityId=" + entityId + "&type=" + type + "&name=" + name + "&mobile=" + mobile + "&email=" + email);
+        }
     </script>
 </head>
 
@@ -368,6 +470,7 @@ $result = $conn->query($sql);
                     echo "<td>" . $row["name"] . "</td>";
                     echo "<td>" . $row["mobileNo"] . "</td>";
                     echo "<td>" . $row["email"] . "</td>";
+                    echo "<td><button class='table-button edit' onclick='enterEditMode(this.parentNode.parentNode)'>Edit</button></td>";
                     echo "</tr>";
                 }
             } else {

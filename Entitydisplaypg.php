@@ -171,24 +171,12 @@ $result = $conn->query($sql);
         }
 
         /* Edit Button Specific Style */
-        .table-button.edit {
+        .table-button.edit-save {
             background-color: #ffa500;
-            /* Orange color for edit */
         }
 
-        .table-button.edit:hover {
+        .table-button.edit-save:hover {
             background-color: #ff8c00;
-            /* Darker orange on hover */
-        }
-
-        .table-button.save {
-            background-color: #ffa500;
-            /* Orange color for save */
-        }
-
-        .table-button.save:hover {
-            background-color: #ff8c00;
-            /* Darker orange on hover */
         }
     </style>
     <script>
@@ -366,42 +354,39 @@ $result = $conn->query($sql);
             xhr.send(JSON.stringify(rowsData));
         };
 
+        function toggleEditSaveMode(button) {
+            var row = button.closest('tr');
+            if (button.textContent === 'Edit') {
+                enterEditMode(row, button);
+            } else {
+                saveRow(row, button);
+            }
+        }
 
-        function enterEditMode(row) {
-            // Enter edit mode for a specific row
+        function enterEditMode(row, button) {
             var typeCell = row.querySelector("td:nth-child(2)");
             var nameCell = row.querySelector("td:nth-child(4)");
             var mobileCell = row.querySelector("td:nth-child(5)");
             var emailCell = row.querySelector("td:nth-child(6)");
 
-            // Replace text with input fields or dropdowns for editing
             typeCell.innerHTML = `<select>
-                                    <option value="Customer">Customer</option>
-                                    <option value="Supplier">Supplier</option>
+                                    <option value="Customer" ${typeCell.textContent.trim() === 'Customer' ? 'selected' : ''}>Customer</option>
+                                    <option value="Supplier" ${typeCell.textContent.trim() === 'Supplier' ? 'selected' : ''}>Supplier</option>
                                   </select>`;
             nameCell.innerHTML = `<input type="text" value="${nameCell.textContent.trim()}">`;
             mobileCell.innerHTML = `<input type="text" value="${mobileCell.textContent.trim()}">`;
             emailCell.innerHTML = `<input type="text" value="${emailCell.textContent.trim()}">`;
 
-            // Add a "Save" button to the row
-            var saveButton = document.createElement("button");
-            saveButton.textContent = "Save";
-            saveButton.classList.add("table-button", "save"); // Add both classes
-            saveButton.style.height = "32px";
-            saveButton.onclick = function() {
-                saveRow(row);
-            };
-            row.appendChild(saveButton);
+            button.textContent = 'Save';
         }
 
-        function saveRow(row) {
+        function saveRow(row, button) {
             var entityId = row.querySelector("td:nth-child(1)").textContent.trim();
             var type = row.querySelector("td:nth-child(2) select").value;
             var name = row.querySelector("td:nth-child(4) input").value;
             var mobile = row.querySelector("td:nth-child(5) input").value;
             var email = row.querySelector("td:nth-child(6) input").value;
 
-            // Send data to the server to update the row
             var xhr = new XMLHttpRequest();
             xhr.open("POST", "update_entity.php", true);
             xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
@@ -410,7 +395,12 @@ $result = $conn->query($sql);
                     var response = JSON.parse(xhr.responseText);
                     if (response.status === "success") {
                         alert(response.message);
-                        location.reload(); // Reload the page to see the changes
+                        // Update the row with new values
+                        row.querySelector("td:nth-child(2)").textContent = type;
+                        row.querySelector("td:nth-child(4)").textContent = name;
+                        row.querySelector("td:nth-child(5)").textContent = mobile;
+                        row.querySelector("td:nth-child(6)").textContent = email;
+                        button.textContent = 'Edit';
                     } else {
                         alert("Error: " + response.message);
                     }
@@ -470,11 +460,11 @@ $result = $conn->query($sql);
                     echo "<td>" . $row["name"] . "</td>";
                     echo "<td>" . $row["mobileNo"] . "</td>";
                     echo "<td>" . $row["email"] . "</td>";
-                    echo "<td><button class='table-button edit' onclick='enterEditMode(this.parentNode.parentNode)'>Edit</button></td>";
+                    echo "<td><button class='table-button edit-save' onclick='toggleEditSaveMode(this)'>Edit</button></td>";
                     echo "</tr>";
                 }
             } else {
-                echo "<tr><td colspan='5'>No data found</td></tr>";
+                echo "<tr><td colspan='7'>No data found</td></tr>";
             }
             $conn->close();
             ?> </tbody>
