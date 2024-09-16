@@ -1,5 +1,6 @@
 <?php
 // Database configuration
+include "SessionPG.php";
 include "Connection.php";
 
 // Fetch EntryID from query parameter
@@ -24,7 +25,11 @@ SELECT
     jd.description,
     jd.DebitAmount,
     jd.CreditAmount,
-    e.name AS EntityName
+    e.name AS EntityName,
+    jd.createdBy,
+    jd.createdDateTime,
+    jd.modifiedBy,
+    jd.modifiedDateTime
 FROM 
     jrldetailed jd
 JOIN 
@@ -221,6 +226,7 @@ WHERE
         }
     </style>
     <title>Journal Entry Details</title>
+
 </head>
 
 <body>
@@ -243,6 +249,7 @@ WHERE
     <br>
     <div class="filter-buttons">
         <button>Edit</button>
+        <button id="editInsert">Edit with Insertion</button>
     </div>
     <div class="journal-container">
         <div class="journal-header">
@@ -264,6 +271,10 @@ WHERE
                     <th>Label</th>
                     <th>Debit</th>
                     <th>Credit</th>
+                    <th>Created By</th>
+                    <th>Created Date Time</th>
+                    <th>Modified By</th>
+                    <th>Modified Date Time</th>
                 </tr>
             </thead>
             <tbody>
@@ -280,6 +291,14 @@ WHERE
                         <td>" . htmlspecialchars($row['description']) . "</td>
                         <td>" . htmlspecialchars($row['DebitAmount']) . "</td>
                         <td>" . htmlspecialchars($row['CreditAmount']) . "</td>
+                        
+                        <td>" . htmlspecialchars($row['createdBy']) . "</td>
+                        
+                        <td>" . htmlspecialchars($row['createdDateTime']) . "</td>
+                        
+                        <td>" . htmlspecialchars($row['modifiedBy']) . "</td>
+                        
+                        <td>" . htmlspecialchars($row['modifiedDateTime']) . "</td>
                       </tr>";
                 }
                 ?>
@@ -292,6 +311,10 @@ WHERE
     // Close the database connection
     $conn->close();
     ?>
+
+
+
+
     <script>
         function makeEditable() {
             const table = document.querySelector('table');
@@ -538,6 +561,7 @@ WHERE
                 .then(data => {
                     if (data.status === 'success') {
                         alert('Journal entries updated successfully!');
+                        location.reload();
                         // Handle success (e.g., show a success message to the user)
                     } else {
                         alert('Error updating journal entries:\n' + data.details.join('\n'));
@@ -585,6 +609,9 @@ WHERE
 `;
         document.head.appendChild(style);
     </script>
+
+
+    <script src="JrnlEditInsert.js"> </script>
 </body>
 
 </html>

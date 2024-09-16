@@ -539,6 +539,7 @@ if (!isset($_SESSION['username'])) {
                     if (result.status === 'success') {
                         console.log('Success:', result);
                         alert('Data successfully posted');
+                        window.location.href = "EachJrnlpg3.php?EntryID=" + result.entryid;
                     } else {
                         console.error('Error:', result.message);
                         alert('Error: ' + result.message);

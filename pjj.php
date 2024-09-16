@@ -2,8 +2,10 @@
 ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
+include "SessionPG.php";
 include "Connection.php";
 
+$username = $_SESSION['username'];
 // Decode the JSON data from the request
 $data = json_decode(file_get_contents("php://input"), true);
 
@@ -22,19 +24,19 @@ $entries = isset($data['entries']) ? $data['entries'] : [];
 // Convert the $entries array to a JSON string
 $entries_json = json_encode($entries);
 
-$stmt = $conn->prepare("CALL YourStoredProcedure5(?, ?, ?, @status)");
+$stmt = $conn->prepare("CALL YourStoredProcedure5(?, ?, ?, @status,@entryid,?)");
 
 // Bind parameters
-$stmt->bind_param('sss', $jdate, $description, $entries_json);
+$stmt->bind_param('ssss', $jdate, $description, $entries_json, $username);
 
 // Execute the statement
 if ($stmt->execute()) {
     // Retrieve the OUT parameter
-    $result = $conn->query("SELECT @status AS status");
+    $result = $conn->query("SELECT @status AS status,@entryid AS entryid ");
     $row = $result->fetch_assoc();
 
     if ($row['status'] == 'success') {
-        $response = ['status' => 'success', 'message' => 'Data successfully posted'];
+        $response = ['status' => 'success', 'message' => 'Data successfully posted', "entryid" => $row['entryid']];
     } else {
         $response = ['status' => 'error', 'message' => 'An error occurred while posting data'];
     }

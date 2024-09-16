@@ -18,7 +18,7 @@ $categorySql = "SELECT DISTINCT CategoryID FROM coa ORDER BY CategoryID";
 $categoryResult = $conn->query($categorySql);
 
 // SQL query to fetch account information
-$sql = "SELECT coa.AccountNo, coa.AccountName, accountsub.SubcategoryName
+$sql = "SELECT coa.AccountNo, coa.AccountName, accountsub.SubcategoryName, coa.createdBy, coa.createdDateTime, coa.modifiedBy, coa.modifiedDateTime
 FROM coa
 LEFT JOIN accountsub ON coa.CategoryID = accountsub.CategoryID AND coa.SubcategoryID = accountsub.SubcategoryID";
 
@@ -232,6 +232,7 @@ $result = $conn->query($sql);
                     if (result.status === 'success') {
                         alert('Account name updated successfully!');
                         toggleEditMode();
+                        location.reload();
                     } else {
                         console.error('Error updating account name:', result.message);
                         alert('Failed to update account name: ' + result.message);
@@ -355,6 +356,10 @@ $result = $conn->query($sql);
                 <th>Account No.</th>
                 <th>Account Name</th>
                 <th>Category Name</th>
+                <th>Created By</th>
+                <th>Created Date Time</th>
+                <th>Modified By</th>
+                <th>Modified Date Time</th>
             </tr>
         </thead>
         <tbody>
@@ -365,10 +370,15 @@ $result = $conn->query($sql);
                     echo "<td>" . $row["AccountNo"] . "</td>";
                     echo "<td>" . $row["AccountName"] . "</td>";
                     echo "<td>" . $row["SubcategoryName"] . "</td>";
+                    echo "<td>" . $row["createdBy"] . "</td>";
+                    echo "<td>" . $row["createdDateTime"] . "</td>";
+                    echo "<td>" . $row["modifiedBy"] . "</td>";
+                    echo "<td>" . $row["modifiedDateTime"] . "</td>";
+
                     echo "</tr>";
                 }
             } else {
-                echo "<tr><td colspan='3'>No results found</td></tr>";
+                echo "<tr><td colspan='7'>No results found</td></tr>";
             }
             $conn->close();
             ?>

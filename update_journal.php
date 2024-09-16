@@ -1,17 +1,19 @@
 <?php
+include "SessionPG.php";
 include "Connection.php";
 
 // Receive and decode the JSON data
 $json_data = file_get_contents('php://input');
 $data = json_decode($json_data, true);
-
+$username = $_SESSION['username'];
 // Prepare the SQL statement
 $sql = "UPDATE jrldetailed 
         SET AccountID = ?, 
             EntityID = ?, 
             description = ?, 
             DebitAmount = ?, 
-            CreditAmount = ? 
+            CreditAmount = ?,
+            modifiedBy = '$username' 
         WHERE EntryID = ? AND LineID = ?";
 
 $stmt = $conn->prepare($sql);

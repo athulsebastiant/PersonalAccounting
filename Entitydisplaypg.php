@@ -1,5 +1,5 @@
 <?php
-
+include "SessionPG.php";
 include "Connection.php";
 
 // SQL query to fetch data
@@ -10,7 +10,11 @@ $sql = "SELECT
     c.AccountName,
     e.name, 
     e.mobileNo, 
-    e.email
+    e.email,
+    e.createdBy,
+    e.createdDateTime,
+    e.modifiedBy,
+    e.modifiedDateTime
 FROM 
     entity e
 JOIN 
@@ -396,11 +400,12 @@ $result = $conn->query($sql);
                     if (response.status === "success") {
                         alert(response.message);
                         // Update the row with new values
-                        row.querySelector("td:nth-child(2)").textContent = type;
-                        row.querySelector("td:nth-child(4)").textContent = name;
-                        row.querySelector("td:nth-child(5)").textContent = mobile;
-                        row.querySelector("td:nth-child(6)").textContent = email;
+                        /* row.querySelector("td:nth-child(2)").textContent = type;
+                         row.querySelector("td:nth-child(4)").textContent = name;
+                         row.querySelector("td:nth-child(5)").textContent = mobile;
+                         row.querySelector("td:nth-child(6)").textContent = email;*/
                         button.textContent = 'Edit';
+                        location.reload();
                     } else {
                         alert("Error: " + response.message);
                     }
@@ -447,6 +452,10 @@ $result = $conn->query($sql);
                 <th> Name </th>
                 <th> Mobile no. </th>
                 <th> Email </th>
+                <th> Created by</th>
+                <th> Created Date Time</th>
+                <th> Modified by</th>
+                <th> Modified Date Time</th>
             </tr>
         </thead>
         <tbody>
@@ -460,11 +469,15 @@ $result = $conn->query($sql);
                     echo "<td>" . $row["name"] . "</td>";
                     echo "<td>" . $row["mobileNo"] . "</td>";
                     echo "<td>" . $row["email"] . "</td>";
+                    echo "<td>" . $row["createdBy"] . "</td>";
+                    echo "<td>" . $row["createdDateTime"] . "</td>";
+                    echo "<td>" . $row["modifiedBy"] . "</td>";
+                    echo "<td>" . $row["modifiedDateTime"] . "</td>";
                     echo "<td><button class='table-button edit-save' onclick='toggleEditSaveMode(this)'>Edit</button></td>";
                     echo "</tr>";
                 }
             } else {
-                echo "<tr><td colspan='7'>No data found</td></tr>";
+                echo "<tr><td colspan='11'>No data found</td></tr>";
             }
             $conn->close();
             ?> </tbody>

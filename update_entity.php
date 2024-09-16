@@ -1,14 +1,16 @@
 <?php
+include "SessionPG.php";
 include "Connection.php";
 
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+    $username = $_SESSION['username'];
     $entityId = $_POST['entityId'];
     $type = $_POST['type'];
     $name = $_POST['name'];
     $mobile = $_POST['mobile'];
     $email = $_POST['email'];
 
-    $sql = "UPDATE entity SET type = ?, name = ?, mobileNo = ?, email = ? WHERE EntityId = ?";
+    $sql = "UPDATE entity SET type = ?, name = ?, mobileNo = ?, email = ?,modifiedBy = '$username' WHERE EntityId = ?";
     $stmt = $conn->prepare($sql);
     $stmt->bind_param('ssssi', $type, $name, $mobile, $email, $entityId);
 

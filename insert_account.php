@@ -1,5 +1,5 @@
 <?php
-
+include "SessionPG.php";
 header('Content-Type: application/json');
 ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
@@ -7,6 +7,7 @@ error_reporting(E_ALL);
 
 include "Connection.php";
 
+$username = strval($_SESSION['username']);
 $response = ["status" => "fail"]; // Default response
 
 try {
@@ -25,8 +26,8 @@ try {
             $categoryID = isset($row['CategoryID']) ? $conn->real_escape_string($row['CategoryID']) : '';
             $subcategoryID = isset($row['SubcategoryID']) ? $conn->real_escape_string($row['SubcategoryID']) : '';
 
-            $stmt = $conn->prepare("CALL InsertCOAData2(?, ?, ?, ?, @status)");
-            $stmt->bind_param("isii", $accountNo, $accountName, $categoryID, $subcategoryID);
+            $stmt = $conn->prepare("CALL InsertCOAData2(?, ?, ?, ?, @status,?)");
+            $stmt->bind_param("isiis", $accountNo, $accountName, $categoryID, $subcategoryID, $username);
 
             if ($stmt->execute()) {
                 $result = $conn->query("SELECT @status AS status");
