@@ -5,7 +5,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const editInsertButton = document.getElementById('editInsert');
 
     if (editInsertButton) {
-        editInsertButton.addEventListener('click', function () {
+        editInsertButton.addEventListener('click', async function () {
             if (!isEditing) {
                 enableEditing();
                 addEnterLine();
@@ -13,15 +13,22 @@ document.addEventListener('DOMContentLoaded', function () {
                 isEditing = true;
             } else {
                 if (validateFields()) {
-                    //this.textContent = 'Edit with Insertion'; // Change button text back to "Edit with Insertion"
-                    // disableEditing();
-                    if (saveChanges()) {
-                        editInsertButton.textContent = 'Edit with Insertion';
-                        disableEditing();
-                        isEditing = false;
+                    try {
+                        const saveResult = await saveChanges();
+                        if (saveResult) {
+                            editInsertButton.textContent = 'Edit with Insertion';
+                            disableEditing();
+                            isEditing = false;
+                            location.reload();
+                        } else {
+                            // If saveChanges() returns false, it means there was an error
+                            console.error('Save operation failed');
+                            // You might want to keep the button as 'Save' here
+                        }
+                    } catch (error) {
+                        console.error('Error during save operation:', error);
+                        alert('An error occurred while saving. Please try again.');
                     }
-                    // Stop editing after save
-                    //isEditing = false;
                 } else {
                     alert('Please fill in all the required fields.');
                 }
@@ -34,7 +41,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     function saveChanges() {
         if (!validateFields()) {
-            return; // Exit the function if validation fails
+            return Promise.resolve(false); // Exit if validation fails
         }
 
         const table = document.querySelector('.journal-container table tbody');
@@ -48,9 +55,28 @@ document.addEventListener('DOMContentLoaded', function () {
         let updateArray = [];
         let totalDebit = 0;
         let totalCredit = 0;
+        const entryIdElement = document.getElementById("entryId");
+        if (!entryIdElement) {
+            console.error("Entry ID element not found");
+            return;
+        }
 
+        // Extract the text content, which will be something like "Entry No. 123"
+        const entryIdText = entryIdElement.textContent;
+        const entryIdMatch = entryIdText.match(/\d+/);
+        if (!entryIdMatch) {
+            console.error("Could not extract Entry ID from:", entryIdText);
+            return;
+        }
+        const entryId = entryIdMatch[0];
+        console.log("Extracted Entry ID:", entryId);
         rows.forEach((row, index) => {
             try {
+
+
+
+                // Extract data from the row cells
+                const lineIDCell = row.querySelector('td:nth-child(1)');
                 const accountCell = row.querySelector('td:nth-child(2)');
                 const entityCell = row.querySelector('td:nth-child(3)');
                 const labelCell = row.querySelector('td:nth-child(4)');
@@ -58,35 +84,33 @@ document.addEventListener('DOMContentLoaded', function () {
                 const creditCell = row.querySelector('.credit');
 
                 if (!accountCell || !labelCell) {
-                    //console.error(`Row ${index + 1}: Missing required cells`);
-                    return; // Skip this row
+                    //console.warn(`Row ${index + 1} missing required cells`);
+                    return;
                 }
 
-                const account = accountCell.textContent.trim().split(" - ")[0].trim();
+                const lineID = lineIDCell ? parseInt(lineIDCell.textContent.trim(), 10) : null;
+                const accountParts = accountCell.textContent.trim().split(" - ");
+                const account = accountParts.length > 0 ? parseInt(accountParts[0].trim(), 10) : null;
 
-                // For the entity, handle null or "-" cases, and extract the number part before " - "
-                const entity = entityCell ?
-                    (entityCell.textContent.trim() === "-" || entityCell.textContent.trim() === "" ? null : entityCell.textContent.trim().split(" - ")[0].trim())
-                    : null;
+                const entityText = entityCell ? entityCell.textContent.trim() : "";
+                const entity = entityText && entityText !== "-" ? parseInt(entityText.split(" - ")[0].trim(), 10) : null;
 
-                // Get the label as it is
                 const label = labelCell.textContent.trim();
-
-                // Parse debit and credit values as before
-                const debitValue = debitCell ? parseFloat(debitCell.textContent.trim()).toFixed(2) : 0.00;
-                const creditValue = creditCell ? parseFloat(creditCell.textContent.trim()).toFixed(2) : 0.00;
+                const debitValue = debitCell ? parseFloat(debitCell.textContent.trim()) : 0.0;
+                const creditValue = creditCell ? parseFloat(creditCell.textContent.trim()) : 0.0;
 
                 const rowData = {
+                    lineID: lineID,
                     account: account,
                     entity: entity,
                     label: label,
                     debit: debitValue,
                     credit: creditValue
                 };
-                totalDebit += parseFloat(rowData.debit);
-                totalCredit += parseFloat(rowData.credit);
 
-                // Check if the row has the 'toInsert' class and add to the appropriate array
+                totalDebit += rowData.debit;
+                totalCredit += rowData.credit;
+
                 if (row.classList.contains('toInsert')) {
                     insertArray.push(rowData);
                 } else {
@@ -97,29 +121,131 @@ document.addEventListener('DOMContentLoaded', function () {
             }
         });
 
-        if (totalDebit !== totalCredit) {
+        if (Math.abs(totalDebit - totalCredit) > 0.01) {
             alert("Total debit and total credit do not match.");
-            return; // Exit the function
+            return;
         }
 
         console.log('Rows to insert:', insertArray);
         console.log('Rows to update:', updateArray);
 
-        /* if (!valid) {
-             alert(errorMessages.join('\n'));
-         }*/
+        const dataToSend = {
+            entryId: entryId,
+            insertArray: insertArray,
+            updateArray: updateArray
+        };
 
-
-        /* if (!valid) {
-             alert(errorMessages.join('\n'));
-         }*/
-
-        //return valid;
-
-
-
-
+        return fetch('up_ins_jrnl.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(dataToSend)
+        })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.text();
+            })
+            .then(text => {
+                console.log('Raw response:', text);
+                const data = JSON.parse(text);
+                console.log('Parsed data:', data);
+                if (data.status === 'success') {
+                    alert(data.message);
+                    return true;
+                } else {
+                    alert('Error: ' + data.message);
+                    return false;
+                }
+            })
+            .catch((error) => {
+                console.error('Fetch error:', error);
+                alert('An error occurred while saving changes. Please check the console for details.');
+                return false;
+            });
     }
+
+
+
+
+
+
+
+
+
+
+
+    /* try {
+        const lineID = row.querySelector('td:nth-child(1)');
+        const accountCell = row.querySelector('td:nth-child(2)');
+        const entityCell = row.querySelector('td:nth-child(3)');
+        const labelCell = row.querySelector('td:nth-child(4)');
+        const debitCell = row.querySelector('.debit');
+        const creditCell = row.querySelector('.credit');
+
+        if (!accountCell || !labelCell) {
+            //console.error(`Row ${index + 1}: Missing required cells`);
+            return; // Skip this row
+        }
+
+        const account = accountCell.textContent.trim().split(" - ")[0].trim();
+
+        // For the entity, handle null or "-" cases, and extract the number part before " - "
+        const entity = entityCell ?
+            (entityCell.textContent.trim() === "-" || entityCell.textContent.trim() === "" ? null : entityCell.textContent.trim().split(" - ")[0].trim())
+            : null;
+
+        // Get the label as it is
+        const label = labelCell.textContent.trim();
+
+        // Parse debit and credit values as before
+        const debitValue = debitCell ? parseFloat(debitCell.textContent.trim()).toFixed(2) : 0.00;
+        const creditValue = creditCell ? parseFloat(creditCell.textContent.trim()).toFixed(2) : 0.00;
+
+        const rowData = {
+            account: account,
+            entity: entity,
+            label: label,
+            debit: debitValue,
+            credit: creditValue
+        };
+        totalDebit += parseFloat(rowData.debit);
+        totalCredit += parseFloat(rowData.credit);
+
+        // Check if the row has the 'toInsert' class and add to the appropriate array
+        if (row.classList.contains('toInsert')) {
+            insertArray.push(rowData);
+        } else {
+            updateArray.push(rowData);
+        }
+    } catch (error) {
+        console.error(`Error processing row ${index + 1}:`, error);
+    }
+});
+
+if (totalDebit !== totalCredit) {
+    alert("Total debit and total credit do not match.");
+    return; // Exit the function
+}
+
+console.log('Rows to insert:', insertArray);
+console.log('Rows to update:', updateArray);
+*/
+    /* if (!valid) {
+         alert(errorMessages.join('\n'));
+     }*/
+
+
+    /* if (!valid) {
+         alert(errorMessages.join('\n'));
+     }*/
+
+    //return valid;
+
+
+
+
+
 
 
 
@@ -163,18 +289,27 @@ document.addEventListener('DOMContentLoaded', function () {
 
     function addNewRow(element) {
         const tbody = element.closest('tbody');
-
-
-        let lastRow = tbody.querySelector('tr:not(.enter-line):last-child');
-        let newValue = 1; // Default value in case there are no rows
-
-        if (lastRow && lastRow.cells.length > 0) {
-            const lastValue = parseInt(lastRow.cells[0].textContent.trim());
-            newValue = isNaN(lastValue) ? 1 : lastValue + 1; // Increment the value by 1
-        }
-
         const newRow = tbody.insertRow(element.parentNode.rowIndex);
         newRow.classList.add('toInsert');
+        let maxLineID = 0;
+        tbody.querySelectorAll('tr').forEach(row => {
+            const lineIDCell = row.cells[0];
+            console.log(lineIDCell);
+            if (lineIDCell) {
+                // Parse the content as an integer, defaulting to 0 if NaN
+                const lineID = parseInt(lineIDCell.textContent.trim(), 10) || 0;
+                console.log(lineID);
+                maxLineID = Math.max(maxLineID, lineID);
+            }
+        });
+
+        // Increment the maxLineID for the new row
+        const newLineID = maxLineID + 1;
+
+        // Increment the maxLineID for the new row
+
+
+
 
 
         for (let i = 0; i < 10; i++) { // Create 10 cells to match your table structure
@@ -182,7 +317,7 @@ document.addEventListener('DOMContentLoaded', function () {
             cell.classList.add('toInsert');
             if (i === 0) {
                 // Set the value of the first column to the new incremented value
-                cell.textContent = newValue;
+                cell.textContent = newLineID;
             }
             if ((i < 6) && (i >= 1)) { // Make only the first 6 cells editable
                 cell.contentEditable = true;

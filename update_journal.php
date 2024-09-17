@@ -6,6 +6,7 @@ include "Connection.php";
 $json_data = file_get_contents('php://input');
 $data = json_decode($json_data, true);
 $username = $_SESSION['username'];
+
 // Prepare the SQL statement
 $sql = "UPDATE jrldetailed 
         SET AccountID = ?, 
@@ -21,29 +22,49 @@ $stmt = $conn->prepare($sql);
 // Initialize response array
 $response = ['status' => 'success', 'message' => 'Journal entry updated successfully', 'details' => []];
 
-// Loop through the received data and update the database
-foreach ($data as $row) {
-    // Bind parameters
-    $entityID = ($row['entity'] === '' || $row['entity'] === 'null' || $row['entity'] === null) ? null : (int)$row['entity'];
+try {
+    // Start a transaction
+    $conn->begin_transaction();
 
-    $stmt->bind_param(
-        "iisddii",
-        $row['account'],
-        $entityID,
-        $row['label'],
-        $row['debit'],
-        $row['credit'],
-        $row['entryID'],
-        $row['lineId']
-    );
+    // Loop through the received data and update the database
+    foreach ($data as $row) {
+        // Handle potential null values for the EntityID
+        $entityID = ($row['entity'] === '' || $row['entity'] === 'null' || $row['entity'] === null) ? null : (int)$row['entity'];
 
-    // Execute the statement
-    if ($stmt->execute()) {
-        $response['details'][] = "Line {$row['lineId']} updated successfully";
-    } else {
-        $response['status'] = 'error';
-        $response['details'][] = "Error updating line {$row['lineId']}: " . $stmt->error;
+        // Bind parameters
+        $stmt->bind_param(
+            "iisddii",
+            $row['account'],  // AccountID
+            $entityID,        // EntityID
+            $row['label'],    // description
+            $row['debit'],    // DebitAmount
+            $row['credit'],   // CreditAmount
+            $row['entryID'],  // EntryID
+            $row['lineId']    // LineID
+        );
+
+        // Execute the statement
+        if (!$stmt->execute()) {
+            // Rollback the transaction if any error occurs
+            $conn->rollback();
+            $response['status'] = 'error';
+            $response['details'][] = "Error updating line {$row['lineId']}: " . $stmt->error;
+            break; // Exit the loop on error
+        } else {
+            // Log successful update for each row
+            $response['details'][] = "Line {$row['lineId']} updated successfully";
+        }
     }
+
+    // Commit the transaction if no errors occurred
+    if ($response['status'] === 'success') {
+        $conn->commit();
+    }
+} catch (Exception $e) {
+    // Rollback the transaction on any exception
+    $conn->rollback();
+    $response['status'] = 'error';
+    $response['details'][] = "Exception: " . $e->getMessage();
 }
 
 // Close the statement

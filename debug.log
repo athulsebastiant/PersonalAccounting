@@ -1,0 +1,52 @@
+Array
+(
+    [entryId] => 55
+    [insertArray] => Array
+        (
+            [0] => Array
+                (
+                    [lineID] => 3
+                    [account] => 51006
+                    [entity] => 
+                    [label] => Bought WOZ
+                    [debit] => 120
+                    [credit] => 0
+                )
+
+            [1] => Array
+                (
+                    [lineID] => 4
+                    [account] => 13001
+                    [entity] => 
+                    [label] => paid with sbi
+                    [debit] => 0
+                    [credit] => 120
+                )
+
+        )
+
+    [updateArray] => Array
+        (
+            [0] => Array
+                (
+                    [lineID] => 1
+                    [account] => 51006
+                    [entity] => 
+                    [label] => Bought Harry Potter JK
+                    [debit] => 500
+                    [credit] => 0
+                )
+
+            [1] => Array
+                (
+                    [lineID] => 2
+                    [account] => 13001
+                    [entity] => 
+                    [label] => Paid with Bank
+                    [debit] => 0
+                    [credit] => 500
+                )
+
+        )
+
+)

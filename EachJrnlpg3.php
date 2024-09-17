@@ -255,7 +255,7 @@ WHERE
         <div class="journal-header">
             <?php if ($master_data) : ?>
                 <h1><?php echo htmlspecialchars($master_data['description']); ?></h1>
-                <h4>Entry No.<?php echo $entry_id; ?></h2>
+                <h4 id="entryId">Entry No.<?php echo $entry_id; ?></h2>
                     <div class="date"><?php echo htmlspecialchars($master_data['jdate']); ?></div>
                 <?php else : ?>
                     <h1>No data found</h1>
