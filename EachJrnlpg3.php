@@ -224,6 +224,38 @@ WHERE
             outline: 2px solid #007bff;
             background-color: #ffffff;
         }
+
+        .toDelete {
+            border: 2px solid red !important;
+        }
+
+        .tooltip {
+            position: relative;
+            display: inline-block;
+        }
+
+        .tooltip .tooltiptext {
+            visibility: hidden;
+            width: 220px;
+            background-color: #555;
+            color: #fff;
+            text-align: center;
+            border-radius: 6px;
+            padding: 5px;
+            position: absolute;
+            z-index: 1;
+            bottom: 125%;
+            /* Position above the button */
+            left: 50%;
+            margin-left: -110px;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .tooltip:hover .tooltiptext {
+            visibility: visible;
+            opacity: 1;
+        }
     </style>
     <title>Journal Entry Details</title>
 
@@ -250,6 +282,11 @@ WHERE
     <div class="filter-buttons">
         <button>Edit</button>
         <button id="editInsert">Edit with Insertion</button>
+        <div class="tooltip">
+            <button id="editDelete">Edit with Deletions</button>
+            <span class="tooltiptext">Double-click on a row to mark it for deletion.</span>
+        </div>
+
     </div>
     <div class="journal-container">
         <div class="journal-header">
@@ -612,6 +649,7 @@ WHERE
 
 
     <script src="JrnlEditInsert.js"> </script>
+    <script src="JrnlEditDelete.js"></script>
 </body>
 
 </html>

@@ -9,7 +9,7 @@ if (!isset($_SESSION['username'])) {
 }
 
 // Call the stored procedure
-$sql = "CALL pandl30()";
+$sql = "CALL PandL31()";
 $result = $conn->query($sql);
 
 ?>
@@ -21,6 +21,16 @@ $result = $conn->query($sql);
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
+        .highlight-loss {
+            color: red;
+            font-weight: bold;
+        }
+
+        .highlight-profit {
+            color: green;
+            font-weight: bold;
+        }
+
         .journal-container {
             max-width: 100%;
             border: 1px solid #ddd;
@@ -191,6 +201,7 @@ $result = $conn->query($sql);
                 $total_debit = 0;
                 if ($result->num_rows > 0) {
                     while ($row = $result->fetch_assoc()) {
+
                         echo "<tr>
                         
                                 <td>" . htmlspecialchars($row['accountID']) . "</td>
@@ -204,6 +215,7 @@ $result = $conn->query($sql);
                 } else {
                     echo "<tr><td colspan='5'>No results found</td></tr>";
                 }
+
                 ?>
             </tbody>
         </table>
