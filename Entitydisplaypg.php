@@ -442,6 +442,7 @@ $result = $conn->query($sql);
             id="saveButton"
             style="display:none;"
             onclick="saveNewRows()"> Save </button>
+        <span style="font-size: 20px;">Manage Entities</span>
     </div>
     <table>
         <thead>

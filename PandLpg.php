@@ -155,6 +155,16 @@ $result = $conn->query($sql);
         .navbar a:last-child {
             margin-left: auto;
         }
+
+        .green {
+            color: green;
+            font-weight: bold;
+        }
+
+        .red {
+            color: red;
+            font-weight: bold;
+        }
     </style>
     <title>Profit and Loss</title>
 </head>
@@ -202,13 +212,20 @@ $result = $conn->query($sql);
                 if ($result->num_rows > 0) {
                     while ($row = $result->fetch_assoc()) {
 
+                        $colorClass = '';
+                        $colorClass1 = '';
+                        if ($row['accountName'] == 'Loss') {
+                            $colorClass1 = 'red';
+                        } elseif ($row['lossname'] == 'Profit') {
+                            $colorClass = 'green';
+                        }
                         echo "<tr>
                         
                                 <td>" . htmlspecialchars($row['accountID']) . "</td>
-                                <td>" . htmlspecialchars($row['accountName']) . "</td>
+                                <td class='$colorClass1'>" . htmlspecialchars($row['accountName']) . "</td>
                                 <td>" . htmlspecialchars($row['credit']) . "</td>
                                 <td>" . htmlspecialchars($row['lossid']) . "</td>
-                                <td>" . htmlspecialchars($row['lossname']) . "</td>
+                                <td class='$colorClass'>" . htmlspecialchars($row['lossname']) . "</td>
                                 <td>" . htmlspecialchars($row['debit']) . "</td>
                               </tr>";
                     }

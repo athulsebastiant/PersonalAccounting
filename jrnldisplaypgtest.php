@@ -172,7 +172,7 @@ $result = $conn->query($sql);
     </div>
     <br>
     <div class="filter-buttons">
-        <button onclick="redirectToPage()">New</button>
+        <button onclick="redirectToPage()">New</button> <span style="font-size: 20px;">Journal Entry</span>
     </div>
     <table>
         <thead>

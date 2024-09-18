@@ -135,7 +135,7 @@ $result = $conn->query($sql);
         <a href="logout.php">Logout</a>
     </div>
     <br>
-
+    <span style="font-size: 20px;">Manage Users</span>
     <table>
         <thead>
             <tr>

@@ -191,7 +191,8 @@ $result = $conn->query($sql);
                 if ($result->num_rows > 0) {
                     while ($row = $result->fetch_assoc()) {
                         echo "<tr>
-                                <td>" . htmlspecialchars($row['AccountID']) . "</td>
+                                <td>" . ($row['AccountID'] == 0 ? '' : htmlspecialchars($row['AccountID'])) . "</td>
+                                
                                 <td>" . htmlspecialchars($row['AccountName']) . "</td>
                                 <td>" . htmlspecialchars($row['Debit']) . "</td>
                                 <td>" . htmlspecialchars($row['Credit']) . "</td>

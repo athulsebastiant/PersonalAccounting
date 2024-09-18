@@ -332,7 +332,9 @@ $result = $conn->query($sql);
             }
         }
     </script>
+    <span style="font-size: 20px;">Chart Of Accounts</span>
     <div class="filter-buttons">
+
         <?php
         // Display buttons for each CategoryID
         if ($categoryResult->num_rows > 0) {

@@ -20,7 +20,7 @@ if ($conn->connect_error) {
 }
 
 // Call the stored procedure
-$sql = "CALL bstest80()";
+$sql = "CALL BSOMG()";
 $result = $conn->query($sql);
 
 ?>
@@ -156,6 +156,26 @@ $result = $conn->query($sql);
         tfoot td {
             font-weight: bold;
         }
+
+        .green {
+            color: green;
+            font-weight: bold;
+        }
+
+        .red {
+            color: red;
+            font-weight: bold;
+        }
+
+        .blue {
+            color: blue;
+            font-weight: bold;
+        }
+
+        .yellow {
+            color: purple;
+            font-weight: bold;
+        }
     </style>
     <title>Balance Sheet</title>
 </head>
@@ -199,12 +219,31 @@ $result = $conn->query($sql);
                 <?php
                 if ($result->num_rows > 0) {
                     while ($row = $result->fetch_assoc()) {
+                        $colorClass1 = '';
+                        $colorClass = '';
+                        if ($row['AccountName'] == 'Total Assets') {
+                            $colorClass1 = 'green';
+                        }
+
+                        switch ($row['ACname']) {
+                            case 'Total Liabilities':
+                                $colorClass = 'red';
+                                break;
+                            case 'Total Equity':
+                                $colorClass = 'blue';
+                                break;
+                            case 'Total Liabilities and Equity':
+                                $colorClass = 'yellow';
+                                break;
+                        }
+
+
                         echo "<tr>
                                 <td>" . htmlspecialchars($row['AccountID']) . "</td>
-                                <td>" . htmlspecialchars($row['AccountName']) . "</td>
+                                <td  class='$colorClass1'>" . htmlspecialchars($row['AccountName']) . "</td>
                                 <td>" . htmlspecialchars($row['debit']) . "</td>
-                                <td>" . htmlspecialchars($row['accountNo']) . "</td>
-                                <td>" . htmlspecialchars($row['ACname']) . "</td>
+                                <td>" . ($row['accountNo'] == 0 ? '' : htmlspecialchars($row['accountNo'])) . "</td>
+                                <td  class='$colorClass'>" . htmlspecialchars($row['ACname']) . "</td>
                                 <td>" . htmlspecialchars($row['credit']) . "</td>
                               </tr>";
                     }
