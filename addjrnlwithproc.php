@@ -571,18 +571,22 @@ if (!isset($_SESSION['username'])) {
                 const accountCell = row.querySelector('.account');
                 const debitCell = row.querySelector('.debit');
                 const creditCell = row.querySelector('.credit');
-
+                const labelcell = row.querySelector('.label');
 
                 // Validate required fields
                 if (accountCell && debitCell && creditCell) {
                     const account = accountCell.textContent.trim();
                     const debit = parseFloat(debitCell.textContent.trim());
                     const credit = parseFloat(creditCell.textContent.trim());
-
+                    const label = labelcell.textContent.trim();
                     if (account && (debit || credit)) {
                         hasValidRow = true; // Mark that at least one valid row exists
                     }
 
+                    if (!label) {
+                        alert('Label is required');
+                        validationFailed = true;
+                    }
                     if (!account) {
                         alert('Account field is required.');
                         validationFailed = true;
