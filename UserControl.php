@@ -130,6 +130,7 @@ $result = $conn->query($sql);
                 <a href="BSpg.php">Balance Sheet</a>
                 <a href="PandLpg.php">Profit and Loss</a>
                 <a href="TrialBalancepg.php">Trial Balance</a>
+                <a href="AccountStatement.php">Account Statement</a>
             </div>
         </div>
         <a href="logout.php">Logout</a>

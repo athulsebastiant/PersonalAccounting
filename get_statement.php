@@ -29,24 +29,94 @@ try {
     $result = $stmt->get_result();
 
     // Output HTML
+    echo " <style>
+     
+
+        #result-table thead {
+            background-color: #4CAF50;
+            color: white;
+        }
+
+        
+
+        #result-table tbody tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+
+        #result-table tr:hover {
+            background-color: #f5f5f5;
+        }
+
+       
+            #result-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        #result-table th,
+        #result-table td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+
+        #result-table th {
+            background-color: #4CAF50;
+        }
+            h2 {
+    font-family: Arial, sans-serif;
+    font-size: 24px;
+    color: #333;
+    margin-top: 20px;
+    text-align: center;
+}
+
+/* Account Details Styling */
+p {
+    font-family: Arial, sans-serif;
+    font-size: 16px;
+    color: #555;
+    margin: 10px 0;
+    text-align: center;
+}
+
+/* Wrapper for Account Statement Details */
+#statement-details {
+    margin: 20px auto;
+    padding: 20px;
+    max-width: 800px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    background-color: #f9f9f9;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+            </style>
+";
+    echo "<div id='statement-details'>";
     echo "<h2>Account Statement</h2>";
     echo "<p>Account ID: " . htmlspecialchars($accountId) . "</p>";
     echo "<p>From: " . htmlspecialchars($fromDate) . " To: " . htmlspecialchars($toDate) . "</p>";
+    echo "</div>";
 
     if (
         $result->num_rows > 0
     ) {
         echo "<table id='result-table'>
+        <thead>
                 <tr>
                     <th>Date</th>
                     
                     <th>Debit Amount</th>
                     <th>Credit Amount</th>
                     <th>Description</th>
-                </tr>";
+                </tr>
+                </thead>";
 
         while ($row = $result->fetch_assoc()) {
-            echo "<tr>
+            echo "
+            <tbody>
+            <tr>
                     <td>" . htmlspecialchars($row['Date']) . "</td>
                     <td>" . htmlspecialchars($row['DebitAmount']) . "</td>
                     <td>" . htmlspecialchars($row['CreditAmount']) . "</td>
@@ -92,7 +162,7 @@ try {
                   </tr>";
         }
 
-        echo "</table>";
+        echo "</tbody></table>";
     } else {
         echo "<p>No transactions found for the specified period.</p>";
     }

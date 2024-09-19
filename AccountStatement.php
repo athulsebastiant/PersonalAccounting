@@ -7,6 +7,50 @@
     <title>Balance Sheet</title>
     <style>
         /* Your existing CSS styles here */
+        #account-select,
+        #fromDate,
+        #toDate,
+        button[type="submit"] {
+            padding: 8px;
+            margin: 5px;
+            font-size: 16px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            background-color: #f9f9f9;
+            transition: background-color 0.3s ease;
+        }
+
+        #account-select:hover,
+        #fromDate:hover,
+        #toDate:hover,
+        button[type="submit"]:hover {
+            background-color: #f5f5f5;
+            cursor: pointer;
+        }
+
+        #account-select:focus,
+        #fromDate:focus,
+        #toDate:focus,
+        button[type="submit"]:focus {
+            outline: none;
+            border-color: #4CAF50;
+        }
+
+        button[type="submit"] {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            cursor: pointer;
+        }
+
+        button[type="submit"]:hover {
+            background-color: #45a049;
+        }
+
+
+
+
         .navbar {
             background-color: #333;
             overflow: hidden;
@@ -75,23 +119,6 @@
         .navbar a:last-child {
             margin-left: auto;
         }
-
-        #result-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 20px;
-        }
-
-        #result-table th,
-        #result-table td {
-            border: 1px solid #ddd;
-            padding: 8px;
-            text-align: left;
-        }
-
-        #result-table th {
-            background-color: #f2f2f2;
-        }
     </style>
 </head>
 
@@ -106,7 +133,7 @@
                 <a href="BSpg.php">Balance Sheet</a>
                 <a href="PandLpg.php">Profit and Loss</a>
                 <a href="TrialBalancepg.php">Trial Balance</a>
-
+                <a href="AccountStatement.php">Account Statement</a>
             </div>
         </div>
 
