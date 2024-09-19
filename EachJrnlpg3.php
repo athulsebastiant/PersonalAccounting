@@ -256,6 +256,17 @@ WHERE
             visibility: visible;
             opacity: 1;
         }
+
+        .save-btn {
+            display: none;
+            padding: 2px 5px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+            margin-left: 5px;
+            margin-top: 5px;
+        }
     </style>
     <title>Journal Entry Details</title>
 
@@ -280,7 +291,7 @@ WHERE
     </div>
     <br>
     <div class="filter-buttons">
-        <button>Edit</button>
+        <button id="edit">Edit</button>
         <button id="editInsert">Edit with Insertion</button>
         <div class="tooltip">
             <button id="editDelete">Edit with Deletions</button>
@@ -291,7 +302,7 @@ WHERE
     <div class="journal-container">
         <div class="journal-header">
             <?php if ($master_data) : ?>
-                <h1><?php echo htmlspecialchars($master_data['description']); ?></h1>
+                <h1 id="jrdesc"><?php echo htmlspecialchars($master_data['description']); ?></h1>
                 <h4 id="entryId">Entry No.<?php echo $entry_id; ?></h2>
                     <div class="date"><?php echo htmlspecialchars($master_data['jdate']); ?></div>
                 <?php else : ?>
@@ -548,6 +559,20 @@ WHERE
             let totalDebit = 0;
             let totalCredit = 0;
             let valid = true;
+            const entryIdElement = document.getElementById("entryId");
+            if (!entryIdElement) {
+                console.error("Entry ID element not found");
+                return;
+            }
+
+            // Extract the text content, which will be something like "Entry No. 123"
+            const entryIdText = entryIdElement.textContent;
+            const entryIdMatch = entryIdText.match(/\d+/);
+            if (!entryIdMatch) {
+                console.error("Could not extract Entry ID from:", entryIdText);
+                return;
+            }
+            const entryId = entryIdMatch[0];
 
             document.querySelectorAll('table tbody tr').forEach(row => {
                 const urlParams = new URLSearchParams(window.location.search);
@@ -616,7 +641,7 @@ WHERE
 
 
         let editMode = false;
-        document.querySelector('.filter-buttons button').addEventListener('click', function() {
+        document.querySelector('#edit').addEventListener('click', function() {
             editMode = !editMode;
             if (editMode) {
                 this.textContent = 'Save';
@@ -650,6 +675,7 @@ WHERE
 
     <script src="JrnlEditInsert.js"> </script>
     <script src="JrnlEditDelete.js"></script>
+    <script src="Jrnl_desc_change.js"></script>
 </body>
 
 </html>

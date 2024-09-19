@@ -26,7 +26,10 @@ try {
     // Start a transaction
     $conn->begin_transaction();
 
-    // Loop through the received data and update the database
+    // Store the EntryID for jrlmaster update later
+    $masterEntryID = null;
+
+    // Loop through the received data and update the jrldetailed table
     foreach ($data as $row) {
         // Handle potential null values for the EntityID
         $entityID = ($row['entity'] === '' || $row['entity'] === 'null' || $row['entity'] === null) ? null : (int)$row['entity'];
@@ -53,12 +56,35 @@ try {
         } else {
             // Log successful update for each row
             $response['details'][] = "Line {$row['lineId']} updated successfully";
+
+            // Store the EntryID from the current row, assuming all rows share the same EntryID
+            $masterEntryID = $row['entryID'];
         }
     }
 
-    // Commit the transaction if no errors occurred
+    // If no errors occurred in the previous loop, proceed to update jrlmaster
     if ($response['status'] === 'success') {
-        $conn->commit();
+        // Prepare the SQL statement for jrlmaster
+        $sqlMaster = "UPDATE jrlmaster 
+                      SET modifiedBy = '$username' 
+                      WHERE EntryID = ?";
+
+        $stmtMaster = $conn->prepare($sqlMaster);
+        $stmtMaster->bind_param("i", $masterEntryID);
+
+        // Execute the jrlmaster update
+        if (!$stmtMaster->execute()) {
+            // Rollback the transaction if any error occurs
+            $conn->rollback();
+            $response['status'] = 'error';
+            $response['details'][] = "Error updating jrlmaster: " . $stmtMaster->error;
+        } else {
+            $response['details'][] = "jrlmaster updated successfully";
+            $conn->commit(); // Commit the transaction if both updates were successful
+        }
+
+        // Close the jrlmaster statement
+        $stmtMaster->close();
     }
 } catch (Exception $e) {
     // Rollback the transaction on any exception
@@ -67,7 +93,7 @@ try {
     $response['details'][] = "Exception: " . $e->getMessage();
 }
 
-// Close the statement
+// Close the jrldetailed statement
 $stmt->close();
 
 // Close the database connection

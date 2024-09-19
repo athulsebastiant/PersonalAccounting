@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Aug 14, 2024 at 06:49 AM
+-- Generation Time: Sep 19, 2024 at 08:49 AM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -27,6 +27,641 @@ DELIMITER $$
 --
 -- Procedures
 --
+CREATE DEFINER=`root`@`localhost` PROCEDURE `BS2` ()   BEGIN
+
+CREATE TEMPORARY TABLE assettable SELECT ROW_NUMBER() OVER(order BY AccountID) AS row_num, AccountID, SPACE(50) as AccountName, SUM(debitAmount - creditAmount) as debit from jrldetailed where accountID IN (SELECT accountNo from coa where categoryID = 1) group by accountID;
+
+UPDATE assettable JOIN COA ON assettable.AccountID = COA.AccountNo SET assettable.AccountName = COA.AccountName;
+
+CREATE TEMPORARY TABLE liatable SELECT ROW_NUMBER() OVER(order BY AccountID) AS row_num, AccountID, SPACE(50) as AccountName, SUM(creditAmount - DebitAmount) as credit from jrldetailed where accountID IN (SELECT accountNo from coa where categoryID = 2) group by accountID;
+
+CREATE TEMPORARY TABLE equitytable SELECT ROW_NUMBER() OVER(order BY AccountID) AS row_num, AccountID, SPACE(50) as AccountName, SUM(creditAmount - DebitAmount) as credit from jrldetailed where accountID IN (SELECT accountNo from coa where categoryID = 3) group by accountID;
+
+UPDATE equitytable JOIN COA ON equitytable.AccountID = COA.AccountNo SET equitytable.AccountName = COA.AccountName;
+
+UPDATE liatable JOIN COA ON liatable.AccountID = COA.AccountNo SET liatable.AccountName = COA.AccountName;
+
+SELECT SUM(credit) INTO @totalLia FROM liatable;
+
+INSERT INTO liatable (AccountName, credit) VALUES ('Total Liabilities', @totalLia);
+
+SELECT SUM(CREDITAmount - debitAmount) AS credit INTO @profit FROM jrldetailed WHERE accountID IN (SELECT accountNo FROM coa WHERE categoryID = 4);
+
+SELECT SUM(DebitAmount - creditAmount) AS debit INTO @loss FROM jrldetailed WHERE accountID IN (SELECT accountNo FROM coa WHERE categoryID = 5);
+
+INSERT INTO equitytable (AccountName, credit) VALUES ('Current year earnings', @profit - @loss);
+
+SELECT SUM(credit) INTO @totalEqu FROM equitytable;
+
+INSERT INTO equitytable (AccountName, credit) VALUES ('Total Equity', @totalEqu);
+
+CREATE TEMPORARY TABLE le SELECT row_num, AccountID, AccountName, credit FROM liatable 
+UNION ALL 
+SELECT row_num, AccountID, AccountName, credit FROM equitytable;
+
+SELECT COUNT(accountID) INTO @rowcount1 FROM assettable;
+SELECT COUNT(accountID) INTO @rowcount2 FROM le;
+
+IF @rowcount1 > @rowcount2 THEN
+    CREATE TEMPORARY TABLE bs SELECT assettable.row_num, assettable.AccountID, assettable.AccountName, debit, le.accountID as 'accountNo', le.accountName as 'ACname', credit FROM assettable LEFT JOIN le ON assettable.row_num = le.row_num;
+ELSEIF @rowcount2 > @rowcount1 THEN
+    CREATE TEMPORARY TABLE bs SELECT le.row_num, assettable.AccountID, assettable.AccountName, debit, le.accountID as 'accountNo', le.accountName as 'ACname', credit FROM le LEFT JOIN assettable ON assettable.row_num = le.row_num;
+ELSE
+    CREATE TEMPORARY TABLE bs SELECT assettable.row_num, assettable.AccountID, assettable.AccountName, debit, le.accountID as 'accountNo', le.accountName as 'ACname', credit FROM assettable INNER JOIN le ON assettable.row_num = le.row_num;
+END IF;
+
+SELECT SUM(debit) INTO @totalAssets FROM assettable;
+
+SELECT (@totalLia + @totalEqu) INTO @totalLE;
+
+INSERT INTO bs(AccountID, AccountName, debit, acName, credit)
+VALUES (0, 'Total Assets', @totalAssets, 'Total Liabilities and Equity', @totalLE);
+
+UPDATE bs
+SET AccountID = 0, AccountName = " ", debit = 0
+WHERE AccountName IS NULL AND AccountID IS NULL AND debit IS NULL;
+
+UPDATE bs
+SET AccountNo = 0, ACNAME = " ", credit = 0
+WHERE credit IS NULL AND ACname IS NULL AND accountNo IS NULL;
+
+SELECT * FROM bs;
+
+END$$
+
+CREATE DEFINER=`root`@`localhost` PROCEDURE `BS3` ()   BEGIN
+
+    -- Create Asset Table
+    CREATE TEMPORARY TABLE assettable 
+    SELECT ROW_NUMBER() OVER(order BY AccountID) AS row_num, AccountID, SPACE(50) as AccountName, 
+           SUM(debitAmount - creditAmount) as debit 
+    FROM jrldetailed 
+    WHERE accountID IN (SELECT accountNo FROM coa WHERE categoryID = 1) 
+    GROUP BY accountID;
+
+    -- Update Asset Names
+    UPDATE assettable 
+    JOIN COA ON assettable.AccountID = COA.AccountNo 
+    SET assettable.AccountName = COA.AccountName;
+
+    -- Create Liabilities Table
+    CREATE TEMPORARY TABLE liatable 
+    SELECT ROW_NUMBER() OVER(order BY AccountID) AS row_num, AccountID, SPACE(50) as AccountName, 
+           SUM(creditAmount - debitAmount) as credit 
+    FROM jrldetailed 
+    WHERE accountID IN (SELECT accountNo FROM coa WHERE categoryID = 2) 
+    GROUP BY accountID;
+
+    -- Create Equity Table
+    CREATE TEMPORARY TABLE equitytable 
+    SELECT ROW_NUMBER() OVER(order BY AccountID) AS row_num, AccountID, SPACE(50) as AccountName, 
+           SUM(creditAmount - debitAmount) as credit 
+    FROM jrldetailed 
+    WHERE accountID IN (SELECT accountNo FROM coa WHERE categoryID = 3) 
+    GROUP BY accountID;
+
+    -- Update Liability and Equity Names
+    UPDATE liatable 
+    JOIN COA ON liatable.AccountID = COA.AccountNo 
+    SET liatable.AccountName = COA.AccountName;
+
+    UPDATE equitytable 
+    JOIN COA ON equitytable.AccountID = COA.AccountNo 
+    SET equitytable.AccountName = COA.AccountName;
+
+    -- Calculate Total Liabilities
+    SELECT SUM(credit) INTO @totalLia FROM liatable;
+    INSERT INTO liatable (AccountName, credit) VALUES ('Total Liabilities', @totalLia);
+
+    -- Calculate Profit and Loss
+    SELECT IFNULL(SUM(CREDITAmount - debitAmount), 0) INTO @profit 
+    FROM jrldetailed 
+    WHERE accountID IN (SELECT accountNo FROM coa WHERE categoryID = 4);
+
+    SELECT IFNULL(SUM(debitAmount - creditAmount), 0) INTO @loss 
+    FROM jrldetailed 
+    WHERE accountID IN (SELECT accountNo FROM coa WHERE categoryID = 5);
+
+    -- Insert Current Year Earnings
+    INSERT INTO equitytable (AccountName, credit) VALUES ('Current year earnings', @profit - @loss);
+
+    -- Calculate Total Equity
+    SELECT SUM(credit) INTO @totalEqu FROM equitytable;
+    INSERT INTO equitytable (AccountName, credit) VALUES ('Total Equity', @totalEqu);
+
+    -- Combine Liabilities and Equity
+    CREATE TEMPORARY TABLE le 
+    SELECT row_num, AccountID, AccountName, credit FROM liatable 
+    UNION 
+    SELECT row_num, AccountID, AccountName, credit FROM equitytable;
+
+    -- Get Row Counts
+    SELECT COUNT(accountID) INTO @rowcount1 FROM assettable;
+    SELECT COUNT(accountID) INTO @rowcount2 FROM le;
+
+    -- Create Balance Sheet Table
+    IF @rowcount1 > @rowcount2 THEN
+        CREATE TEMPORARY TABLE bs 
+        SELECT assettable.row_num, assettable.AccountID, assettable.AccountName, debit, 
+               le.accountID as 'accountNo', le.accountName as 'ACname', credit 
+        FROM assettable LEFT JOIN le ON assettable.row_num = le.row_num;
+    ELSEIF @rowcount2 > @rowcount1 THEN
+        CREATE TEMPORARY TABLE bs 
+        SELECT le.row_num, assettable.AccountID, assettable.AccountName, debit, 
+               le.accountID as 'accountNo', le.accountName as 'ACname', credit 
+        FROM le LEFT JOIN assettable ON assettable.row_num = le.row_num;
+    ELSE
+        CREATE TEMPORARY TABLE bs 
+        SELECT assettable.row_num, assettable.AccountID, assettable.AccountName, debit, 
+               le.accountID as 'accountNo', le.accountName as 'ACname', credit 
+        FROM assettable INNER JOIN le ON assettable.row_num = le.row_num;
+    END IF;
+
+    -- Calculate Total Assets and Total Liabilities + Equity
+    SELECT SUM(debit) INTO @totalAssets FROM bs;
+    SELECT (@totalLia + @totalEqu) INTO @totalLE;
+
+    -- Insert Totals into Balance Sheet
+    INSERT INTO bs (AccountID, AccountName, debit, acName, credit)
+    VALUES (0, 'Total Assets', @totalAssets, 'Total Liabilities and Equity', @totalLE);
+
+    -- Clean up NULL rows
+    UPDATE bs 
+    SET AccountID = 0, AccountName = ' ', debit = 0 
+    WHERE AccountName IS NULL AND AccountID IS NULL AND debit IS NULL;
+
+    UPDATE bs 
+    SET accountNo = 0, ACname = ' ', credit = 0 
+    WHERE credit IS NULL AND ACname IS NULL AND accountNo IS NULL;
+
+    -- Select Final Balance Sheet
+    SELECT * FROM bs;
+
+END$$
+
+CREATE DEFINER=`root`@`localhost` PROCEDURE `BSCGP` ()   BEGIN
+
+    -- Create temporary table for assets
+    CREATE TEMPORARY TABLE assettable 
+    SELECT ROW_NUMBER() OVER(order BY AccountID) AS row_num, 
+           AccountID,
+           SPACE(50) as AccountName,
+           SUM(debitAmount - creditAmount) as debit 
+    FROM jrldetailed 
+    WHERE accountID IN (SELECT accountNo FROM coa WHERE categoryID = 1) 
+    GROUP BY accountID;
+
+    -- Update assettable with account names
+    UPDATE assettable 
+    JOIN COA ON assettable.AccountID = COA.AccountNo 
+    SET assettable.AccountName = COA.AccountName;
+
+    -- Create temporary table for liabilities
+    CREATE TEMPORARY TABLE liatable 
+    SELECT ROW_NUMBER() OVER(order BY AccountID) AS row_num, 
+           AccountID,
+           SPACE(50) as AccountName,
+           SUM(creditAmount - DebitAmount) as credit 
+    FROM jrldetailed 
+    WHERE accountID IN (SELECT accountNo FROM coa WHERE categoryID = 2) 
+    GROUP BY accountID;
+
+    -- Create temporary table for equity
+    CREATE TEMPORARY TABLE equitytable 
+    SELECT ROW_NUMBER() OVER(order BY AccountID) AS row_num, 
+           AccountID,
+           SPACE(50) as AccountName,
+           SUM(creditAmount - DebitAmount) as credit 
+    FROM jrldetailed 
+    WHERE accountID IN (SELECT accountNo FROM coa WHERE categoryID = 3) 
+    GROUP BY accountID;
+
+    -- Update equitytable with account names
+    UPDATE equitytable 
+    JOIN COA ON equitytable.AccountID = COA.AccountNo 
+    SET equitytable.AccountName = COA.AccountName;
+
+    -- Update liatable with account names
+    UPDATE liatable 
+    JOIN COA ON liatable.AccountID = COA.AccountNo 
+    SET liatable.AccountName = COA.AccountName;
+
+    -- Calculate total liabilities
+    SELECT SUM(credit) INTO @totalLia FROM liatable;
+
+    -- Insert total liabilities into liatable
+    INSERT INTO liatable (AccountName, credit) 
+    VALUES ('Total Liabilities', @totalLia);
+
+    -- Calculate profit and loss for equity
+    SELECT SUM(CREDITAmount - debitAmount) INTO @profit 
+    FROM jrldetailed 
+    WHERE accountID IN (SELECT accountNo FROM coa WHERE categoryID = 4);
+
+    SELECT SUM(DebitAmount - creditAmount) INTO @loss 
+    FROM jrldetailed 
+    WHERE accountID IN (SELECT accountNo FROM coa WHERE categoryID = 5);
+
+    -- Insert current year earnings into equitytable
+    INSERT INTO equitytable (AccountName, credit) 
+    VALUES ('Current year earnings', @profit - @loss);
+
+    -- Calculate total equity
+    SELECT SUM(credit) INTO @totalEqu FROM equitytable;
+
+    -- Insert total equity into equitytable
+    INSERT INTO equitytable (AccountName, credit) 
+    VALUES ('Total Equity', @totalEqu);
+
+    -- Create a temporary table combining liabilities and equity
+    CREATE TEMPORARY TABLE le 
+    SELECT row_num, AccountID, AccountName, credit 
+    FROM liatable 
+    UNION 
+    SELECT row_num, AccountID, AccountName, credit 
+    FROM equitytable;
+
+    -- Create bs table using a full outer join (simulated)
+    CREATE TEMPORARY TABLE bs (
+        row_num INT,
+        AccountID INT,
+        AccountName VARCHAR(255),
+        debit DECIMAL(20,2),
+        accountNo INT,
+        ACname VARCHAR(255),
+        credit DECIMAL(20,2)
+    );
+
+    -- Insert assets (left join with liabilities and equity)
+    INSERT INTO bs (row_num, AccountID, AccountName, debit, accountNo, ACname, credit)
+    SELECT 
+        assettable.row_num,
+        assettable.AccountID,
+        assettable.AccountName,
+        assettable.debit,
+        le.accountID AS accountNo,
+        le.accountName AS ACname,
+        le.credit
+    FROM assettable
+    LEFT JOIN le ON assettable.row_num = le.row_num;
+
+    -- Insert remaining liabilities and equity (right join with assets)
+    INSERT INTO bs (row_num, AccountID, AccountName, debit, accountNo, ACname, credit)
+    SELECT 
+        le.row_num,
+        assettable.AccountID,
+        assettable.AccountName,
+        assettable.debit,
+        le.accountID AS accountNo,
+        le.accountName AS ACname,
+        le.credit
+    FROM le
+    LEFT JOIN assettable ON assettable.row_num = le.row_num
+    WHERE assettable.row_num IS NULL;
+
+    -- Clean up NULL rows
+    UPDATE bs
+    SET AccountID = 0, AccountName = " ", debit = 0
+    WHERE AccountName IS NULL AND AccountID IS NULL AND debit IS NULL;
+
+    UPDATE bs
+    SET accountNo = 0, ACname = " ", credit = 0
+    WHERE credit IS NULL AND ACname IS NULL AND accountNo IS NULL;
+
+    -- Calculate total assets
+    SELECT SUM(debit) INTO @totalAssets FROM bs;
+
+    -- Calculate total liabilities and equity
+    SELECT (@totalLia + @totalEqu) INTO @totalLE;
+
+    -- Insert total assets and total liabilities & equity into bs
+    INSERT INTO bs (AccountID, AccountName, debit, acName, credit)
+    VALUES (0, 'Total Assets', @totalAssets, 'Total Liabilities and Equity', @totalLE);
+
+    -- Final output
+    SELECT * FROM bs;
+
+END$$
+
+CREATE DEFINER=`root`@`localhost` PROCEDURE `BSchp4` ()   BEGIN
+
+
+
+CREATE TEMPORARY TABLE assettable SELECT ROW_NUMBER() OVER(order BY AccountID) AS row_num, AccountID,SPACE(50) as AccountName,SUM(debitAmount- creditAmount) as debit from jrldetailed where accountID IN (SELECT accountNo from coa where categoryID = 1) group by accountID;
+
+UPDATE assettable JOIN COA ON assettable.AccountID = COA.AccountNo SET assettable.AccountName = COA.AccountName;
+
+CREATE TEMPORARY TABLE liatable SELECT ROW_NUMBER() OVER(order BY AccountID) AS row_num,AccountID,SPACE(50) as AccountName,SUM(creditAmount - DebitAmount) as credit from jrldetailed where accountID IN (SELECT accountNo from coa where categoryID = 2) group by accountID;
+
+CREATE TEMPORARY TABLE equitytable SELECT ROW_NUMBER() OVER(order BY AccountID) AS row_num,AccountID,SPACE(50) as AccountName,SUM(creditAmount - DebitAmount) as credit from jrldetailed where accountID IN (SELECT accountNo from coa where categoryID = 3) group by accountID;
+
+UPDATE equitytable JOIN COA ON equitytable.AccountID = COA.AccountNo SET equitytable.AccountName = COA.AccountName;
+
+UPDATE liatable JOIN COA ON liatable.AccountID = COA.AccountNo SET liatable.AccountName = COA.AccountName;
+
+select sum(credit) into @totalLia from liatable;
+
+insert into liatable (AccountName,credit) values ('Total Liabilities',@totalLia);
+
+
+SELECT SUM(CREDITAmount-debitAmount) as credit into @profit from jrldetailed where accountID IN (SELECT accountNo from coa where categoryID = 4);
+
+SELECT SUM(DebitAmount-creditAmount) as debit into @loss from jrldetailed where accountID IN (SELECT accountNo from coa where categoryID = 5);
+
+
+
+
+
+insert into equitytable (AccountName,credit) values ('Current year earnings',@profit - @loss);
+
+select sum(credit) into @totalEqu from equitytable;
+
+
+insert into equitytable (AccountName,credit) values ('Total Equity',@totalEqu );
+
+
+CREATE TEMPORARY TABLE le SELECT row_num,AccountID,AccountName,credit from liatable UNION SELECT row_num,AccountID,AccountName, credit from equitytable;
+
+select count(accountID) into @rowcount1 from assettable ;
+
+select count(accountID) into @rowcount2 from le ;
+
+
+IF @rowcount1 > @rowcount2 THEN -- If assettable has more rows, do a LEFT JOIN 
+CREATE TEMPORARY TABLE bs SELECT assettable.row_num, assettable.AccountID, assettable.AccountName, debit, le.accountID as 'accountNo', le.accountName as 'ACname', credit FROM assettable LEFT JOIN le ON assettable.row_num = le.row_num; ELSEIF @rowcount2 > @rowcount1 THEN -- If le has more rows, still keep assettable on the left but use RIGHT JOIN logic
+CREATE TEMPORARY TABLE bs SELECT assettable.row_num, assettable.AccountID, assettable.AccountName, debit, le.accountID as 'accountNo', le.accountName as 'ACname', credit FROM le LEFT JOIN assettable ON assettable.row_num = le.row_num; ELSE -- If both have equal rows, do an INNER JOIN
+CREATE TEMPORARY TABLE bs SELECT assettable.row_num, assettable.AccountID, assettable.AccountName, debit, le.accountID as 'accountNo', le.accountName as 'ACname', credit FROM assettable INNER JOIN le ON assettable.row_num = le.row_num; END IF;
+
+select sum(debit) into @totalAssets from assettable;
+
+select (@totalLia + @totalEqu) into @totalLE;
+
+
+
+
+	
+INSERT INTO bs(AccountID,AccountName,debit,acName,credit)
+values(0,'Total Assets', @totalAssets,'Total Liabilities and Equity',  @totalLE);
+
+
+
+
+UPDATE bs 
+set AccountID = 0,AccountName = " ",debit=0
+where AccountName IS NULL and AccountID IS NULL and debit is null ;
+
+UPDATE bs
+set AccountNo=0,ACNAME = " ",credit=0
+where credit IS NULL and ACname IS NULL and accountNo IS NULL;
+
+
+
+
+
+
+SELECT * from bs;
+
+
+
+
+END$$
+
+CREATE DEFINER=`root`@`localhost` PROCEDURE `BSCl` ()   BEGIN
+
+-- Create asset table
+CREATE TEMPORARY TABLE assettable 
+SELECT AccountID, SPACE(50) as AccountName, SUM(debitAmount - creditAmount) as debit 
+FROM jrldetailed 
+WHERE accountID IN (SELECT accountNo FROM coa WHERE categoryID = 1) 
+GROUP BY AccountID;
+
+UPDATE assettable JOIN COA ON assettable.AccountID = COA.AccountNo 
+SET assettable.AccountName = COA.AccountName;
+
+-- Create liability table
+CREATE TEMPORARY TABLE liatable 
+SELECT AccountID, SPACE(50) as AccountName, SUM(creditAmount - DebitAmount) as credit 
+FROM jrldetailed 
+WHERE accountID IN (SELECT accountNo FROM coa WHERE categoryID = 2) 
+GROUP BY AccountID;
+
+UPDATE liatable JOIN COA ON liatable.AccountID = COA.AccountNo 
+SET liatable.AccountName = COA.AccountName;
+
+-- Create equity table
+CREATE TEMPORARY TABLE equitytable 
+SELECT AccountID, SPACE(50) as AccountName, SUM(creditAmount - DebitAmount) as credit 
+FROM jrldetailed 
+WHERE accountID IN (SELECT accountNo FROM coa WHERE categoryID = 3) 
+GROUP BY AccountID;
+
+UPDATE equitytable JOIN COA ON equitytable.AccountID = COA.AccountNo 
+SET equitytable.AccountName = COA.AccountName;
+
+-- Calculate total liabilities
+SELECT COALESCE(SUM(credit), 0) INTO @totalLia FROM liatable;
+INSERT INTO liatable (AccountID, AccountName, credit) 
+VALUES (0, 'Total Liabilities', @totalLia);
+
+-- Calculate profit/loss
+SELECT COALESCE(SUM(CREDITAmount - debitAmount), 0) INTO @profit 
+FROM jrldetailed 
+WHERE accountID IN (SELECT accountNo FROM coa WHERE categoryID = 4);
+
+SELECT COALESCE(SUM(DebitAmount - creditAmount), 0) INTO @loss 
+FROM jrldetailed 
+WHERE accountID IN (SELECT accountNo FROM coa WHERE categoryID = 5);
+
+INSERT INTO equitytable (AccountID, AccountName, credit) 
+VALUES (0, 'Current year earnings', @profit - @loss);
+
+-- Calculate total equity
+SELECT COALESCE(SUM(credit), 0) INTO @totalEqu FROM equitytable;
+INSERT INTO equitytable (AccountID, AccountName, credit) 
+VALUES (0, 'Total Equity', @totalEqu);
+
+-- Combine liabilities and equity
+CREATE TEMPORARY TABLE le 
+SELECT AccountID, AccountName, credit FROM liatable 
+UNION ALL 
+SELECT AccountID, AccountName, credit FROM equitytable;
+
+-- Create final balance sheet
+CREATE TEMPORARY TABLE bs 
+SELECT a.AccountID, a.AccountName, a.debit, 
+       le.AccountID as 'accountNo', le.AccountName as 'ACname', le.credit
+FROM assettable a
+LEFT JOIN le ON FALSE  -- This ensures all rows from assettable are included
+UNION ALL
+SELECT NULL as AccountID, NULL as AccountName, NULL as debit,
+       le.AccountID as 'accountNo', le.AccountName as 'ACname', le.credit
+FROM le
+WHERE le.AccountID NOT IN (SELECT COALESCE(accountNo, 0) FROM assettable);
+
+-- Calculate totals
+SELECT COALESCE(SUM(debit), 0) INTO @totalAssets FROM assettable;
+SELECT (@totalLia + @totalEqu) INTO @totalLE;
+
+-- Insert totals row
+INSERT INTO bs (AccountID, AccountName, debit, accountNo, ACname, credit)
+VALUES (0, 'Total Assets', @totalAssets, 0, 'Total Liabilities and Equity', @totalLE);
+
+-- Clean up NULL values
+UPDATE bs
+SET AccountID = COALESCE(AccountID, 0),
+    AccountName = COALESCE(AccountName, ''),
+    debit = COALESCE(debit, 0),
+    accountNo = COALESCE(accountNo, 0),
+    ACname = COALESCE(ACname, ''),
+    credit = COALESCE(credit, 0);
+
+-- Display the final balance sheet
+SELECT * FROM bs;
+
+END$$
+
+CREATE DEFINER=`root`@`localhost` PROCEDURE `BSOMG` ()   BEGIN
+
+CREATE TEMPORARY TABLE assettable SELECT ROW_NUMBER() OVER(order BY AccountID) AS row_num, AccountID,SPACE(50) as AccountName,SUM(debitAmount- creditAmount) as debit from jrldetailed where accountID IN (SELECT accountNo from coa where categoryID = 1) group by accountID;
+
+UPDATE assettable JOIN COA ON assettable.AccountID = COA.AccountNo SET assettable.AccountName = COA.AccountName;
+
+-- SELECT * from assettable;
+
+-- Create the temporary table with row numbers
+CREATE TEMPORARY TABLE liatable 
+SELECT 
+    ROW_NUMBER() OVER(order BY AccountID) AS row_num,
+    AccountID,
+    SPACE(50) AS AccountName,
+    SUM(creditAmount - DebitAmount) AS credit 
+FROM jrldetailed 
+WHERE accountID IN (SELECT accountNo FROM coa WHERE categoryID = 2)
+GROUP BY accountID;
+
+-- Update AccountName in liatable using data from the COA table
+UPDATE liatable 
+JOIN COA ON liatable.AccountID = COA.AccountNo 
+SET liatable.AccountName = COA.AccountName;
+
+-- Get the total liabilities
+SELECT SUM(credit) INTO @totalLia FROM liatable;
+
+-- Insert 'Total Liabilities' row with a placeholder for row_num (0 for now)
+INSERT INTO liatable (row_num, AccountName, credit) 
+VALUES (0, 'Total Liabilities', @totalLia);
+
+-- Update the row_num for 'Total Liabilities' to be the previous maximum row_num + 1
+UPDATE liatable
+SET row_num = (SELECT MAX(row_num) + 1 FROM liatable)
+WHERE AccountName = 'Total Liabilities';
+
+UPDATE liatable
+Set AccountID = NULL
+WHERE AccountName = 'Total Liabilities';
+-- SELECT * from liatable;
+
+-- Create the temporary equitytable with initial row numbers
+CREATE TEMPORARY TABLE equitytable 
+SELECT 
+    ROW_NUMBER() OVER(order BY AccountID) AS row_num,
+    AccountID,
+    SPACE(50) AS AccountName,
+    SUM(creditAmount - DebitAmount) AS credit 
+FROM jrldetailed 
+WHERE accountID IN (SELECT accountNo FROM coa WHERE categoryID = 3)
+GROUP BY accountID;
+
+-- Update AccountName in equitytable using data from the COA table
+UPDATE equitytable 
+JOIN COA ON equitytable.AccountID = COA.AccountNo 
+SET equitytable.AccountName = COA.AccountName;
+
+-- Calculate the profit and loss
+SELECT SUM(CREDITAmount - DebitAmount) INTO @profit FROM jrldetailed 
+WHERE accountID IN (SELECT accountNo FROM coa WHERE categoryID = 4);
+
+SELECT SUM(DebitAmount - CreditAmount) INTO @loss FROM jrldetailed 
+WHERE accountID IN (SELECT accountNo FROM coa WHERE categoryID = 5);
+
+-- Insert the 'Current year earnings' into equitytable
+INSERT INTO equitytable (row_num, AccountName, credit) 
+VALUES (0, 'Current year earnings', @profit - @loss);
+
+-- Calculate the total equity and insert 'Total Equity' into equitytable
+SELECT SUM(credit) INTO @totalEqu FROM equitytable;
+
+INSERT INTO equitytable (row_num, AccountName, credit) 
+VALUES (0, 'Total Equity', @totalEqu);
+
+-- Get the maximum row number from liatable
+SELECT MAX(row_num) INTO @max_liatable_row FROM liatable;
+
+-- Update the row numbers in equitytable to continue from the max row number in liatable
+UPDATE equitytable
+SET row_num = row_num + @max_liatable_row;
+
+-- Update row numbers for the manually inserted rows ('Current year earnings' and 'Total Equity')
+UPDATE equitytable
+SET row_num = (SELECT MAX(row_num) + 1 FROM equitytable)
+WHERE AccountName IN ('Current year earnings');
+
+UPDATE equitytable
+SET row_num = (SELECT MAX(row_num) + 1 FROM equitytable)
+WHERE AccountName IN ('Total Equity');
+
+-- SELECT * from equitytable;
+
+
+CREATE TEMPORARY TABLE le SELECT row_num,AccountID,AccountName,credit from liatable UNION SELECT row_num,AccountID,AccountName, credit from equitytable;
+-- SELECT * from le;
+select count(accountID) into @rowcount1 from assettable ;
+
+select count(accountID) into @rowcount2 from le ;
+
+
+IF @rowcount1 > @rowcount2 THEN
+CREATE TEMPORARY TABLE bs SELECT assettable.row_num,assettable.AccountID,assettable.AccountName,debit,le.accountID as 'accountNo',le.accountName as 'ACname',credit from assettable left join le on assettable.row_num = le.row_num;
+ELSEIF @rowcount2 > @rowcount1 THEN
+CREATE TEMPORARY TABLE bs SELECT le.row_num,assettable.AccountID,assettable.AccountName,debit,le.accountID as 'accountNo',le.accountName as 'ACname',credit from le left join assettable on assettable.row_num = le.row_num;
+ELSE
+CREATE TEMPORARY TABLE bs SELECT assettable.row_num,assettable.AccountID,assettable.AccountName,debit,le.accountID as 'accountNo',le.accountName as 'ACname',credit from assettable inner join le on assettable.row_num = le.row_num;
+END IF;
+
+
+select sum(debit) into @totalAssets from bs;
+
+select (@totalLia + @totalEqu) into @totalLE;
+
+
+
+
+	
+INSERT INTO bs(AccountID,AccountName,debit,acName,credit)
+values(NULL,'Total Assets', @totalAssets,'Total Liabilities and Equity',  @totalLE);
+
+
+
+
+UPDATE bs 
+set AccountID = NULL,AccountName = " ",debit=NULL
+where AccountName IS NULL and AccountID IS NULL and debit is null ;
+
+UPDATE bs
+set AccountNo=NULL,ACNAME = " ",credit=NULL
+where credit IS NULL and ACname IS NULL and accountNo IS NULL;
+
+
+
+
+
+
+SELECT * from bs;
+
+
+
+END$$
+
 CREATE DEFINER=`root`@`localhost` PROCEDURE `bstest8` ()   BEGIN
 
 
@@ -124,6 +759,8 @@ CREATE TEMPORARY TABLE assettable SELECT ROW_NUMBER() OVER(order BY AccountID) A
 
 UPDATE assettable JOIN COA ON assettable.AccountID = COA.AccountNo SET assettable.AccountName = COA.AccountName;
 
+SELECT * from assettable;
+
 CREATE TEMPORARY TABLE liatable SELECT ROW_NUMBER() OVER(order BY AccountID) AS row_num,AccountID,SPACE(50) as AccountName,SUM(creditAmount - DebitAmount) as credit from jrldetailed where accountID IN (SELECT accountNo from coa where categoryID = 2) group by accountID;
 
 CREATE TEMPORARY TABLE equitytable SELECT ROW_NUMBER() OVER(order BY AccountID) AS row_num,AccountID,SPACE(50) as AccountName,SUM(creditAmount - DebitAmount) as credit from jrldetailed where accountID IN (SELECT accountNo from coa where categoryID = 3) group by accountID;
@@ -135,6 +772,7 @@ UPDATE liatable JOIN COA ON liatable.AccountID = COA.AccountNo SET liatable.Acco
 select sum(credit) into @totalLia from liatable;
 
 insert into liatable (AccountName,credit) values ('Total Liabilities',@totalLia);
+SELECT * from liatable;
 
 
 SELECT SUM(CREDITAmount-debitAmount) as credit into @profit from jrldetailed where accountID IN (SELECT accountNo from coa where categoryID = 4);
@@ -151,10 +789,10 @@ select sum(credit) into @totalEqu from equitytable;
 
 
 insert into equitytable (AccountName,credit) values ('Total Equity',@totalEqu );
-
+SELECT * from equitytable;
 
 CREATE TEMPORARY TABLE le SELECT row_num,AccountID,AccountName,credit from liatable UNION SELECT row_num,AccountID,AccountName, credit from equitytable;
-
+SELECT * from le;
 select count(accountID) into @rowcount1 from assettable ;
 
 select count(accountID) into @rowcount2 from le ;
@@ -243,6 +881,88 @@ CREATE DEFINER=`root`@`localhost` PROCEDURE `GenerateTrialBalance` ()   BEGIN
   DROP TEMPORARY TABLE IF EXISTS trialBalance;
 END$$
 
+CREATE DEFINER=`root`@`localhost` PROCEDURE `GetAccountTill` (IN `p_AccountID` INT, IN `p_FromDate` DATE, IN `p_ToDate` DATE)   BEGIN
+    DECLARE debitSum DECIMAL(18, 2);
+    DECLARE creditSum DECIMAL(18, 2);
+
+    -- Convert fromDate and toDate to timestamps with time set to 12:00 AM
+    SET p_FromDate = TIMESTAMP(p_FromDate, '00:00:00');
+    SET p_ToDate = TIMESTAMP(p_ToDate, '23:59:59'); -- Setting to end of the day for toDate
+
+    -- Calculate the sum of DebitAmount
+    SELECT SUM(DebitAmount)
+    INTO debitSum
+    FROM jrldetailed 
+    INNER JOIN jrlmaster ON jrlmaster.EntryID = jrldetailed.EntryID
+    WHERE AccountID = p_AccountID 
+    AND jrlmaster.createdDateTime < p_FromDate ;
+
+    -- Calculate the sum of CreditAmount
+    SELECT SUM(CreditAmount)
+    INTO creditSum
+    FROM jrldetailed 
+    INNER JOIN jrlmaster ON jrlmaster.EntryID = jrldetailed.EntryID
+    WHERE AccountID = p_AccountID 
+    AND jrlmaster.createdDateTime < p_FromDate;
+    -- Conditional logic to decide which sum to return
+    IF debitSum > creditSum THEN
+        SELECT 
+            DATE(p_FromDate) AS Date,          -- Selecting createdDateTime as Date
+            (debitSum - creditSum) AS DebitAmount,                        -- Returning the DebitAmount total
+            '' AS CreditAmount,                               -- Empty space for CreditAmount
+            "Amount till date" AS Description;
+        
+    ELSE
+        SELECT 
+            DATE(p_FromDate) AS Date,          -- Selecting createdDateTime as Date
+            '' AS DebitAmount,                                -- Empty space for DebitAmount
+            (creditSum - debitSum) AS CreditAmount,                       -- Returning the CreditAmount total
+            "Amount till date" AS Description;
+       
+    END IF;
+END$$
+
+CREATE DEFINER=`root`@`localhost` PROCEDURE `GetAccTill` (IN `p_AccountID` INT, IN `p_FromDate` DATE)   BEGIN
+    DECLARE debitSum DECIMAL(18, 2);
+    DECLARE creditSum DECIMAL(18, 2);
+
+    -- Convert fromDate and toDate to timestamps with time set to 12:00 AM
+    SET p_FromDate = TIMESTAMP(p_FromDate, '00:00:00');
+    
+
+    -- Calculate the sum of DebitAmount
+    SELECT SUM(DebitAmount)
+    INTO debitSum
+    FROM jrldetailed 
+    INNER JOIN jrlmaster ON jrlmaster.EntryID = jrldetailed.EntryID
+    WHERE AccountID = p_AccountID 
+    AND jrlmaster.createdDateTime < p_FromDate ;
+
+    -- Calculate the sum of CreditAmount
+    SELECT SUM(CreditAmount)
+    INTO creditSum
+    FROM jrldetailed 
+    INNER JOIN jrlmaster ON jrlmaster.EntryID = jrldetailed.EntryID
+    WHERE AccountID = p_AccountID 
+    AND jrlmaster.createdDateTime < p_FromDate;
+    -- Conditional logic to decide which sum to return
+    IF debitSum > creditSum THEN
+        SELECT 
+            DATE(p_FromDate) AS Date,          -- Selecting createdDateTime as Date
+            (debitSum - creditSum) AS DebitAmount,                        -- Returning the DebitAmount total
+            '' AS CreditAmount,                               -- Empty space for CreditAmount
+            "Amount till date" AS Description;
+        
+    ELSE
+        SELECT 
+            DATE(p_FromDate) AS Date,          -- Selecting createdDateTime as Date
+            '' AS DebitAmount,                                -- Empty space for DebitAmount
+            (creditSum - debitSum) AS CreditAmount,                       -- Returning the CreditAmount total
+            "Amount till date" AS Description;
+       
+    END IF;
+END$$
+
 CREATE DEFINER=`root`@`localhost` PROCEDURE `getJrnlList` ()   BEGIN
 CREATE TEMPORARY TABLE jrlList
 SELECT jrlmaster.EntryID,jdate,jrlmaster.description,jrlmaster.createdBy,jrlmaster.createdDateTime,jrlmaster.modifiedBy,jrlmaster.modifiedDateTime,SUM(jrldetailed.DebitAmount)as 'total'
@@ -258,6 +978,58 @@ END$$
 CREATE DEFINER=`root`@`localhost` PROCEDURE `InsertCOAData` (IN `p_AccountNo` INT, IN `p_AccountName` VARCHAR(255), IN `p_CategoryID` INT, IN `p_SubcategoryID` INT)   BEGIN
     INSERT INTO coa (AccountNo, AccountName, CategoryID, SubcategoryID)
     VALUES (p_AccountNo, p_AccountName, p_CategoryID, p_SubcategoryID);
+END$$
+
+CREATE DEFINER=`root`@`localhost` PROCEDURE `InsertCOAData2` (IN `p_AccountNo` INT, IN `p_AccountName` VARCHAR(50), IN `p_CategoryID` INT, IN `p_SubcategoryID` INT, OUT `p_status` VARCHAR(10), IN `p_CreatedBy` VARCHAR(50))   BEGIN
+    DECLARE EXIT HANDLER FOR SQLEXCEPTION
+    BEGIN
+        -- Rollback the transaction in case of an error
+        ROLLBACK;
+        SET p_status = 'fail';
+    END;
+
+    -- Start the transaction
+    START TRANSACTION;
+
+    -- Insert data into the coa table
+    INSERT INTO coa (AccountNo, AccountName, CategoryID, SubcategoryID,createdBy)
+    VALUES (p_AccountNo, p_AccountName, p_CategoryID, p_SubcategoryID,p_CreatedBy);
+
+    -- Commit the transaction
+    COMMIT;
+    SET p_status = 'success';
+END$$
+
+CREATE DEFINER=`root`@`localhost` PROCEDURE `InsertEntities` (IN `jsonData` JSON, IN `p_CreatedBy` VARCHAR(50))   BEGIN
+    DECLARE i INT DEFAULT 0;
+    DECLARE jsonLength INT;
+    DECLARE entityId VARCHAR(50);
+    DECLARE entityType VARCHAR(50);
+    DECLARE accountNo VARCHAR(50);
+    DECLARE entityName VARCHAR(100);
+    DECLARE mobileNo VARCHAR(20);
+    DECLARE email VARCHAR(100);
+
+    -- Get the length of the JSON array
+    SET jsonLength = JSON_LENGTH(jsonData);
+
+    -- Loop through the JSON array
+    WHILE i < jsonLength DO
+        -- Extract values from the JSON array
+        SET entityId = JSON_UNQUOTE(JSON_EXTRACT(jsonData, CONCAT('$[', i, '].entityId')));
+        SET entityType = JSON_UNQUOTE(JSON_EXTRACT(jsonData, CONCAT('$[', i, '].type')));
+        SET accountNo = JSON_UNQUOTE(JSON_EXTRACT(jsonData, CONCAT('$[', i, '].account')));
+        SET entityName = JSON_UNQUOTE(JSON_EXTRACT(jsonData, CONCAT('$[', i, '].name')));
+        SET mobileNo = JSON_UNQUOTE(JSON_EXTRACT(jsonData, CONCAT('$[', i, '].mobile')));
+        SET email = JSON_UNQUOTE(JSON_EXTRACT(jsonData, CONCAT('$[', i, '].email')));
+
+        -- Insert the data into the entity table
+        INSERT INTO entity(EntityId, type, AccountNo, name, mobileNo, email,createdBy)
+        VALUES (entityId, entityType, accountNo, entityName, mobileNo, email,p_CreatedBy);
+
+        -- Increment the counter
+        SET i = i + 1;
+    END WHILE;
 END$$
 
 CREATE DEFINER=`root`@`localhost` PROCEDURE `pandl3` ()   BEGIN
@@ -476,6 +1248,140 @@ select * from pl;
 
 END$$
 
+CREATE DEFINER=`root`@`localhost` PROCEDURE `PandL31` ()   BEGIN
+CREATE TEMPORARY TABLE profittable
+SELECT ROW_NUMBER() OVER(order BY AccountID) AS row_num, AccountID,SPACE(50) as AccountName,SUM(CREDITAmount-debitAmount) as credit
+from jrldetailed
+where accountID IN (SELECT accountNo from coa where categoryID = 4) 
+group by accountID;
+
+UPDATE profittable
+JOIN COA ON profittable.AccountID = COA.AccountNo
+SET profittable.AccountName = COA.AccountName;
+
+CREATE TEMPORARY TABLE losstable
+SELECT ROW_NUMBER() OVER(order BY AccountID) AS row_num,AccountID,SPACE(50) as AccountName,SUM(DebitAmount-creditAmount) as debit
+from jrldetailed
+where accountID IN (SELECT accountNo from coa where categoryID = 5)
+group by accountID;
+
+UPDATE losstable
+JOIN COA ON losstable.AccountID = COA.AccountNo
+SET losstable.AccountName = COA.AccountName;
+
+
+select count(accountID) into @rowcount1 from profittable ;
+
+select count(accountID) into @rowcount2 from losstable ;
+
+
+
+
+
+
+
+IF @rowcount1 > @rowcount2 THEN
+
+
+CREATE TEMPORARY TABLE pl
+SELECT profittable.row_num as 'row',profittable.accountID,profittable.accountName,profittable.credit, losstable.accountID as 'lossid',losstable.accountName as 'lossname',losstable.debit from profittable left join losstable on profittable.row_num = losstable.row_num order by losstable.row_num;
+
+
+ELSEIF @rowcount2 > @rowcount1 THEN
+
+CREATE TEMPORARY TABLE pl
+SELECT losstable.row_num as 'row',profittable.accountID,profittable.accountName,profittable.credit,losstable.accountID as 'lossid',losstable.accountName as 'lossname',losstable.debit 
+from losstable
+left join profittable on profittable.row_num = losstable.row_num order by losstable.row_num;
+
+
+ELSE
+
+
+CREATE TEMPORARY TABLE pl
+SELECT profittable.row_num as 'row',profittable.accountID,profittable.accountName,profittable.credit,losstable.accountID as 'lossid',losstable.accountName as 'lossname',losstable.debit 
+from losstable
+inner join profittable on profittable.row_num = losstable.row_num order by losstable.row_num;
+
+END IF;
+
+
+select sum(debit) into @totalExpense from pl;
+select sum(credit) into @totalIncome from pl;
+
+IF @totalIncome >= @totalExpense THEN
+	IF @rowcount1 > @rowcount2 THEN
+	UPDATE pl
+	set lossname = 'Profit', debit = @totalIncome - @totalExpense
+	where row = @rowcount2 + 1;
+	
+	ELSE
+	INSERT INTO pl(lossname,debit)
+	values('Profit', @totalIncome - @totalExpense);
+	END IF;
+
+
+ELSE
+	IF @rowcount1 >= @rowcount2 THEN
+	INSERT INTO pl(accountName,credit)
+	values('Loss',  @totalExpense - @totalIncome);
+	
+	ELSE
+	update pl
+	set Accountname = 'Loss', credit = @totalExpense - @totalIncome
+	where row = @rowcount1 + 1;
+	END IF;
+	
+
+END IF;
+
+
+UPDATE PL 
+set AccountID = NULL,AccountName = " ",credit=NULL
+where AccountName IS NULL and AccountID IS NULL and credit IS NULL;
+
+UPDATE PL 
+set lossID = NULL,lossname = " ",debit = NULL
+where lossName IS NULL and lossID IS NULL and debit IS NULL;
+
+select * from pl;
+
+
+
+
+
+
+
+END$$
+
+CREATE DEFINER=`root`@`localhost` PROCEDURE `SOA` (IN `AccountID` INT, IN `fromDate` DATE, IN `toDate` DATE)   BEGIN
+    -- Convert input dates to timestamps with time set to 00:00:00 (midnight)
+    DECLARE fromTimestamp TIMESTAMP;
+    DECLARE toTimestamp TIMESTAMP;
+    
+    SET fromTimestamp = TIMESTAMP(fromDate);
+    SET toTimestamp = TIMESTAMP(toDate) + INTERVAL 1 DAY - INTERVAL 1 SECOND;
+
+    SELECT
+    DATE(jrlmaster.createdDateTime) AS createdDate,
+        
+        jrldetailed.DebitAmount,
+        jrldetailed.CreditAmount,
+        jrldetailed.description
+         
+    FROM 
+        jrldetailed 
+    INNER JOIN 
+        jrlmaster ON jrldetailed.EntryID = jrlmaster.EntryID 
+    WHERE 
+        jrldetailed.AccountID = AccountID 
+        AND jrlmaster.createdDateTime >= fromTimestamp 
+        AND jrlmaster.createdDateTime <= toTimestamp
+    ORDER By createdDate;    
+        
+        
+END$$
+
 CREATE DEFINER=`root`@`localhost` PROCEDURE `YourStoredProcedure` (IN `p_jdate` VARCHAR(255), IN `p_description` TEXT, IN `p_entries` JSON)   BEGIN
     -- Declare variables to store the output
     DECLARE v_output TEXT;
@@ -528,6 +1434,207 @@ CREATE DEFINER=`root`@`localhost` PROCEDURE `YourStoredProcedure1` (IN `p_jdate`
 
     -- Output the result
     SELECT CONCAT('Successfully inserted journal entry with ID: ', v_description_id) AS result;
+END$$
+
+CREATE DEFINER=`root`@`localhost` PROCEDURE `YourStoredProcedure2` (IN `p_jdate` DATE, IN `p_description` TEXT, IN `p_entries` JSON, OUT `p_status` VARCHAR(20))   BEGIN
+    DECLARE v_description_id INT;
+    DECLARE v_i INT DEFAULT 0;
+    DECLARE v_account INT;
+    DECLARE v_label VARCHAR(255);
+    DECLARE v_debit DECIMAL(10,2);
+    DECLARE v_credit DECIMAL(10,2);
+
+    -- Declare a handler for any error
+    DECLARE EXIT HANDLER FOR SQLEXCEPTION
+    BEGIN
+        -- Rollback the transaction and set the status to error
+        ROLLBACK;
+        SET p_status = 'error';
+    END;
+
+    -- Start the transaction
+    START TRANSACTION;
+
+    -- Insert into jrlmaster
+    INSERT INTO jrlmaster (jdate, description, createdDateTime) 
+    VALUES (p_jdate, p_description, CURRENT_TIMESTAMP());
+
+    -- Get the last inserted ID
+    SET v_description_id = LAST_INSERT_ID();
+
+    -- Loop through the entries JSON array
+    WHILE JSON_EXTRACT(p_entries, CONCAT('$[', v_i, ']')) IS NOT NULL DO
+        SET v_account = JSON_UNQUOTE(JSON_EXTRACT(p_entries, CONCAT('$[', v_i, '].account')));
+        SET v_label = JSON_UNQUOTE(JSON_EXTRACT(p_entries, CONCAT('$[', v_i, '].label')));
+        SET v_debit = COALESCE(CAST(JSON_UNQUOTE(JSON_EXTRACT(p_entries, CONCAT('$[', v_i, '].debit'))) AS DECIMAL(10,2)), 0.0);
+        SET v_credit = COALESCE(CAST(JSON_UNQUOTE(JSON_EXTRACT(p_entries, CONCAT('$[', v_i, '].credit'))) AS DECIMAL(10,2)), 0.0);
+
+        -- Insert into jrldetailed
+        INSERT INTO jrldetailed (EntryID, LineID, AccountID, description, DebitAmount, CreditAmount)
+        VALUES (v_description_id, v_i + 1, v_account, v_label, v_debit, v_credit);
+
+        SET v_i = v_i + 1;
+    END WHILE;
+
+    -- If everything is successful, commit the transaction and set success status
+    COMMIT;
+    SET p_status = 'success';
+
+END$$
+
+CREATE DEFINER=`root`@`localhost` PROCEDURE `YourStoredProcedure3` (IN `p_jdate` DATE, IN `p_description` TEXT, IN `p_entries` JSON, OUT `p_status` VARCHAR(10))   BEGIN
+    DECLARE v_description_id INT;
+    DECLARE v_i INT DEFAULT 0;
+    DECLARE v_account INT;
+    DECLARE v_entity INT;
+    DECLARE v_label VARCHAR(255);
+    DECLARE v_debit DECIMAL(10,2);
+    DECLARE v_credit DECIMAL(10,2);
+
+    -- Declare a handler for any error
+    DECLARE EXIT HANDLER FOR SQLEXCEPTION
+    BEGIN
+        -- Rollback the transaction and set the status to error
+        ROLLBACK;
+        SET p_status = 'error';
+    END;
+
+    -- Start the transaction
+    START TRANSACTION;
+
+    -- Insert into jrlmaster
+    INSERT INTO jrlmaster (jdate, description, createdDateTime)
+    VALUES (p_jdate, p_description, CURRENT_TIMESTAMP());
+
+    -- Get the last inserted ID
+    SET v_description_id = LAST_INSERT_ID();
+
+    -- Loop through the entries JSON array
+    WHILE JSON_EXTRACT(p_entries, CONCAT('$[', v_i, ']')) IS NOT NULL DO
+        SET v_account = JSON_UNQUOTE(JSON_EXTRACT(p_entries, CONCAT('$[', v_i, '].account')));
+        SET v_entity = JSON_EXTRACT(p_entries, CONCAT('$[', v_i, '].entity'));
+        SET v_label = JSON_UNQUOTE(JSON_EXTRACT(p_entries, CONCAT('$[', v_i, '].label')));
+        SET v_debit = COALESCE(CAST(JSON_UNQUOTE(JSON_EXTRACT(p_entries, CONCAT('$[', v_i, '].debit'))) AS DECIMAL(10,2)), 0.0);
+        SET v_credit = COALESCE(CAST(JSON_UNQUOTE(JSON_EXTRACT(p_entries, CONCAT('$[', v_i, '].credit'))) AS DECIMAL(10,2)), 0.0);
+
+        -- Handle NULL for EntityID
+        IF v_entity IS NULL OR JSON_UNQUOTE(v_entity) = 'null' THEN
+            SET v_entity = NULL;
+        ELSE
+            SET v_entity = CAST(JSON_UNQUOTE(v_entity) AS INT);
+        END IF;
+
+        -- Insert into jrldetailed
+        INSERT INTO jrldetailed (EntryID, LineID, AccountID, EntityID, description, DebitAmount, CreditAmount)
+        VALUES (v_description_id, v_i + 1, v_account, v_entity, v_label, v_debit, v_credit);
+
+        SET v_i = v_i + 1;
+    END WHILE;
+
+    -- If everything is successful, commit the transaction and set success status
+    COMMIT;
+    SET p_status = 'success';
+
+END$$
+
+CREATE DEFINER=`root`@`localhost` PROCEDURE `YourStoredProcedure4` (IN `p_jdate` DATE, IN `p_description` TEXT, IN `p_entries` JSON, OUT `p_status` VARCHAR(10))   BEGIN
+    DECLARE v_description_id INT;
+    DECLARE v_i INT DEFAULT 0;
+    DECLARE v_account INT;
+    DECLARE v_entity INT;
+    DECLARE v_label VARCHAR(255);
+    DECLARE v_debit DECIMAL(10,2);
+    DECLARE v_credit DECIMAL(10,2);
+
+    -- Declare a handler for any error
+    DECLARE EXIT HANDLER FOR SQLEXCEPTION
+    BEGIN
+        -- Rollback the transaction and set the status to error
+        ROLLBACK;
+        SET p_status = 'error';
+    END;
+
+    -- Start the transaction
+    START TRANSACTION;
+
+    -- Insert into jrlmaster
+    INSERT INTO jrlmaster (jdate, description, createdDateTime)
+    VALUES (p_jdate, p_description, CURRENT_TIMESTAMP());
+
+    -- Get the last inserted ID
+    SET v_description_id = LAST_INSERT_ID();
+
+    -- Loop through the entries JSON array
+    WHILE JSON_EXTRACT(p_entries, CONCAT('$[', v_i, ']')) IS NOT NULL DO
+        SET v_account = JSON_UNQUOTE(JSON_EXTRACT(p_entries, CONCAT('$[', v_i, '].account')));
+        SET v_entity = JSON_EXTRACT(p_entries, CONCAT('$[', v_i, '].entity'));
+        SET v_label = JSON_UNQUOTE(JSON_EXTRACT(p_entries, CONCAT('$[', v_i, '].label')));
+        SET v_debit = COALESCE(CAST(JSON_UNQUOTE(JSON_EXTRACT(p_entries, CONCAT('$[', v_i, '].debit'))) AS DECIMAL(10,2)), 0.0);
+        SET v_credit = COALESCE(CAST(JSON_UNQUOTE(JSON_EXTRACT(p_entries, CONCAT('$[', v_i, '].credit'))) AS DECIMAL(10,2)), 0.0);
+
+        -- Insert into jrldetailed
+        INSERT INTO jrldetailed (EntryID, LineID, AccountID, EntityID, description, DebitAmount, CreditAmount)
+        VALUES (v_description_id, v_i + 1, v_account, v_entity, v_label, v_debit, v_credit);
+
+        SET v_i = v_i + 1;
+    END WHILE;
+
+    -- If everything is successful, commit the transaction and set success status
+    COMMIT;
+    SET p_status = 'success';
+
+END$$
+
+CREATE DEFINER=`root`@`localhost` PROCEDURE `YourStoredProcedure5` (IN `p_jdate` DATE, IN `p_description` TEXT, IN `p_entries` JSON, OUT `p_status` VARCHAR(10), OUT `p_entryid` INT, IN `p_CreatedBy` VARCHAR(50))   BEGIN
+    DECLARE v_description_id INT;
+    DECLARE v_i INT DEFAULT 0;
+    DECLARE v_account INT;
+    DECLARE v_entity INT;
+    DECLARE v_label VARCHAR(255);
+    DECLARE v_debit DECIMAL(10,2);
+    DECLARE v_credit DECIMAL(10,2);
+    DECLARE v_error_message TEXT;
+
+    -- Declare a handler for any error
+    DECLARE EXIT HANDLER FOR SQLEXCEPTION
+    BEGIN
+        -- Get the error message
+        GET DIAGNOSTICS CONDITION 1 v_error_message = MESSAGE_TEXT;
+        
+        -- Rollback the transaction and set the status to error
+        ROLLBACK;
+        SET p_status = CONCAT('error: ', v_error_message);
+    END;
+
+    -- Start the transaction
+    START TRANSACTION;
+
+    -- Insert into jrlmaster
+    INSERT INTO jrlmaster (jdate, description, createdDateTime,createdBy)
+    VALUES (p_jdate, p_description, CURRENT_TIMESTAMP(),p_CreatedBy);
+
+    -- Get the last inserted ID
+    SET v_description_id = LAST_INSERT_ID();
+
+    -- Loop through the entries JSON array
+    WHILE JSON_EXTRACT(p_entries, CONCAT('$[', v_i, ']')) IS NOT NULL DO
+        SET v_account = JSON_UNQUOTE(JSON_EXTRACT(p_entries, CONCAT('$[', v_i, '].account')));
+        SET v_entity = NULLIF(JSON_UNQUOTE(JSON_EXTRACT(p_entries, CONCAT('$[', v_i, '].entity'))), 'null');
+        SET v_label = JSON_UNQUOTE(JSON_EXTRACT(p_entries, CONCAT('$[', v_i, '].label')));
+        SET v_debit = COALESCE(CAST(JSON_UNQUOTE(JSON_EXTRACT(p_entries, CONCAT('$[', v_i, '].debit'))) AS DECIMAL(10,2)), 0.0);
+        SET v_credit = COALESCE(CAST(JSON_UNQUOTE(JSON_EXTRACT(p_entries, CONCAT('$[', v_i, '].credit'))) AS DECIMAL(10,2)), 0.0);
+
+        -- Insert into jrldetailed
+        INSERT INTO jrldetailed (EntryID, LineID, AccountID, EntityID, description, DebitAmount, CreditAmount,createdBy)
+        VALUES (v_description_id, v_i + 1, v_account, v_entity, v_label, v_debit, v_credit,p_CreatedBy);
+
+        SET v_i = v_i + 1;
+    END WHILE;
+
+    -- If everything is successful, commit the transaction and set success status
+    COMMIT;
+    SET p_status = 'success';
+	SET p_entryid= v_description_id;
 END$$
 
 DELIMITER ;
@@ -607,6 +1714,31 @@ INSERT INTO `accountsub` (`CategoryID`, `SubcategoryID`, `SubcategoryName`, `cre
 -- --------------------------------------------------------
 
 --
+-- Table structure for table `bs`
+--
+
+CREATE TABLE `bs` (
+  `AssetAccountID` int(11) NOT NULL,
+  `AssetAccountName` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `AssetDebit` decimal(33,2) DEFAULT NULL,
+  `LiabilityEquityAccountID` int(11) DEFAULT 0,
+  `LiabilityEquityAccountName` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT '',
+  `LiabilityEquityCredit` decimal(33,2) DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `bs`
+--
+
+INSERT INTO `bs` (`AssetAccountID`, `AssetAccountName`, `AssetDebit`, `LiabilityEquityAccountID`, `LiabilityEquityAccountName`, `LiabilityEquityCredit`) VALUES
+(11001, 'Cash', -24945.00, NULL, NULL, NULL),
+(12002, 'Machinery', 1000.00, NULL, NULL, NULL),
+(13001, 'SBI Bank', 52160.00, NULL, NULL, NULL),
+(14003, 'Roshan Mathews', 1000.00, NULL, NULL, NULL);
+
+-- --------------------------------------------------------
+
+--
 -- Table structure for table `coa`
 --
 
@@ -628,15 +1760,15 @@ CREATE TABLE `coa` (
 INSERT INTO `coa` (`AccountNo`, `AccountName`, `CategoryID`, `SubcategoryID`, `createdBy`, `createdDateTime`, `modifiedBy`, `modifiedDateTime`) VALUES
 (11001, 'Cash', 1, 1, NULL, '2024-06-30 05:55:18', NULL, '2024-06-30 05:55:18'),
 (11002, 'Accounts Receivable', 1, 1, NULL, '2024-06-30 05:55:18', NULL, '2024-06-30 05:55:18'),
-(12001, 'Office Equipment', 1, 2, NULL, '2024-06-30 05:55:18', NULL, '2024-06-30 05:55:18'),
+(12001, 'Office Equipments', 1, 2, NULL, '2024-06-30 05:55:18', NULL, '2024-09-05 16:09:26'),
 (12002, 'Machinery', 1, 2, NULL, '2024-06-30 05:55:18', NULL, '2024-06-30 05:55:18'),
 (12003, 'Ivory Tusks', 1, 2, NULL, '2024-08-11 16:21:46', NULL, '2024-08-11 16:21:46'),
-(13001, 'SBI', 1, 3, NULL, '2024-06-30 05:55:18', NULL, '2024-06-30 05:55:18'),
-(13002, 'Fed Bank', 1, 3, NULL, '2024-06-30 05:55:18', NULL, '2024-06-30 05:55:18'),
+(13001, 'SBI Bank', 1, 3, NULL, '2024-06-30 05:55:18', NULL, '2024-09-09 04:05:55'),
+(13002, 'Federal Bank', 1, 3, NULL, '2024-06-30 05:55:18', NULL, '2024-09-05 16:05:02'),
 (13003, 'Kotak', 1, 3, NULL, '2024-08-11 16:23:36', NULL, '2024-08-11 16:23:36'),
-(14001, 'Abraham', 1, 4, NULL, '2024-06-30 05:55:18', NULL, '2024-06-30 05:55:18'),
+(14001, 'Abraham Kumbuckal', 1, 4, NULL, '2024-06-30 05:55:18', NULL, '2024-09-05 16:07:16'),
 (14002, 'KCCL', 1, 4, NULL, '2024-06-30 05:55:18', NULL, '2024-06-30 05:55:18'),
-(14003, 'Roshan', 1, 4, NULL, '2024-08-11 16:23:36', NULL, '2024-08-11 16:23:36'),
+(14003, 'Roshan Mathews', 1, 4, NULL, '2024-08-11 16:23:36', NULL, '2024-09-05 16:06:10'),
 (15001, 'Raw Materials', 1, 5, NULL, '2024-06-30 05:55:18', NULL, '2024-06-30 05:55:18'),
 (15002, 'Finished Goods', 1, 5, NULL, '2024-06-30 05:55:18', NULL, '2024-06-30 05:55:18'),
 (16001, 'Employee Advances', 1, 6, NULL, '2024-06-30 05:55:18', NULL, '2024-06-30 05:55:18'),
@@ -670,6 +1802,10 @@ INSERT INTO `coa` (`AccountNo`, `AccountName`, `CategoryID`, `SubcategoryID`, `c
 (44001, 'Rental Income', 4, 4, NULL, '2024-06-30 05:55:18', NULL, '2024-06-30 05:55:18'),
 (45001, 'Stock Market Earnings', 4, 5, NULL, '2024-06-30 05:55:18', NULL, '2024-06-30 05:55:18'),
 (51001, 'General Expenses', 5, 1, NULL, '2024-06-30 05:55:18', NULL, '2024-06-30 05:55:18'),
+(51003, 'Gym Membership', 5, 1, NULL, '2024-08-27 14:06:20', NULL, '2024-08-27 14:06:20'),
+(51004, 'Therapy Expense', 5, 1, NULL, '2024-08-29 03:39:39', NULL, '2024-08-29 03:39:39'),
+(51005, 'Fertiliser Expense', 5, 1, NULL, '2024-09-15 04:16:40', NULL, '2024-09-15 04:16:40'),
+(51006, 'Books', 5, 1, 'gooboy21', '2024-09-15 04:39:17', 'gooboy21', '2024-09-15 04:44:30'),
 (52001, 'Salaries Expense', 5, 2, NULL, '2024-06-30 05:55:18', NULL, '2024-06-30 05:55:18'),
 (52002, 'Wages Expense', 5, 2, NULL, '2024-06-30 05:55:18', NULL, '2024-06-30 05:55:18'),
 (53001, 'Office Rent', 5, 3, NULL, '2024-06-30 05:55:18', NULL, '2024-06-30 05:55:18'),
@@ -693,7 +1829,7 @@ CREATE TABLE `entity` (
   `type` varchar(20) NOT NULL,
   `AccountNo` int(11) NOT NULL,
   `name` varchar(60) NOT NULL,
-  `mobileNo` int(11) DEFAULT NULL,
+  `mobileNo` bigint(20) DEFAULT NULL,
   `email` varchar(254) DEFAULT NULL,
   `createdBy` varchar(50) DEFAULT NULL,
   `createdDateTime` timestamp NOT NULL DEFAULT current_timestamp(),
@@ -706,9 +1842,12 @@ CREATE TABLE `entity` (
 --
 
 INSERT INTO `entity` (`EntityID`, `type`, `AccountNo`, `name`, `mobileNo`, `email`, `createdBy`, `createdDateTime`, `modifiedBy`, `modifiedDateTime`) VALUES
-(4, 'Customer', 14001, 'Abraham', 555888444, 'ak47@gmail.com', NULL, '2024-08-14 04:19:00', NULL, '2024-08-14 04:20:13'),
-(5, 'Customer', 14003, 'Roshan', 999888771, 'rmn21@gmail.com', NULL, '2024-08-14 04:19:00', NULL, '2024-08-14 04:20:32'),
-(6, 'Supplier', 21003, 'Nellenkuzhy', 2147483647, 'nktom@gmail.com', NULL, '2024-08-14 04:19:00', NULL, '2024-08-14 04:19:00');
+(1, 'Customer', 21007, 'Lulu Hypermart', 8945110987, 'luluhm@outlook.com', NULL, '2024-08-20 04:46:32', 'gooboy21', '2024-09-15 07:43:36'),
+(2, 'Customer', 14002, 'KCCL Ltd.', 2147483647, 'kcclin@gmail.com', NULL, '2024-08-20 04:46:32', NULL, '2024-08-20 04:46:32'),
+(3, 'Customer', 14003, 'Roshan Mathews', 8892421246, 'rm11@gmail.com', NULL, '2024-08-22 03:37:25', NULL, '2024-08-22 03:37:25'),
+(4, 'Supplier', 21003, 'Tomy N', 5571236025, 'nn23@gmail.com', NULL, '2024-08-22 03:39:13', NULL, '2024-08-22 03:39:13'),
+(5, 'Supplier', 21005, 'Marian College Kuttikkanam', 5166676513, 'mcka@gmail.com', NULL, '2024-08-22 03:43:13', NULL, '2024-08-22 03:43:13'),
+(6, 'Customer', 14001, 'Abraham Kumbuckal', 12348840099, 'akk23@gmail.com', 'gooboy21', '2024-09-15 07:37:26', NULL, '2024-09-15 07:37:26');
 
 -- --------------------------------------------------------
 
@@ -735,8 +1874,8 @@ CREATE TABLE `jrldetailed` (
 --
 
 INSERT INTO `jrldetailed` (`EntryID`, `LineID`, `AccountID`, `EntityID`, `description`, `DebitAmount`, `CreditAmount`, `createdBy`, `createdDateTime`, `modifiedBy`, `modifiedDateTime`) VALUES
-(1, 1, 13001, NULL, 'opening balance', 20000.00, 0.00, NULL, '2024-06-30 05:55:19', NULL, '2024-06-30 05:55:19'),
-(1, 2, 11001, NULL, 'opening balance', 0.00, 20000.00, NULL, '2024-06-30 05:55:19', NULL, '2024-06-30 05:55:19'),
+(1, 1, 13001, NULL, 'opening balance', 20000.00, 0.00, NULL, '2024-06-30 05:55:19', NULL, '2024-09-04 04:32:18'),
+(1, 2, 11001, NULL, 'opening balance', 0.00, 20000.00, NULL, '2024-06-30 05:55:19', NULL, '2024-09-04 04:25:52'),
 (2, 1, 54001, NULL, 'paying electricity', 1000.00, 0.00, NULL, '2024-06-30 05:55:19', NULL, '2024-06-30 05:55:19'),
 (2, 2, 11001, NULL, 'paying electricity', 0.00, 1000.00, NULL, '2024-06-30 05:55:19', NULL, '2024-06-30 05:55:19'),
 (3, 1, 11001, NULL, 'taking some cash', 3000.00, 0.00, NULL, '2024-06-30 05:55:19', NULL, '2024-06-30 05:55:19'),
@@ -751,8 +1890,8 @@ INSERT INTO `jrldetailed` (`EntryID`, `LineID`, `AccountID`, `EntityID`, `descri
 (7, 2, 42002, NULL, 'salary', 0.00, 30000.00, NULL, '2024-06-30 05:55:19', NULL, '2024-06-30 05:55:19'),
 (8, 1, 13001, NULL, 'interest to sbi', 100.00, 0.00, NULL, '2024-06-30 05:55:19', NULL, '2024-06-30 05:55:19'),
 (8, 2, 43001, NULL, 'interest', 0.00, 100.00, NULL, '2024-06-30 05:55:19', NULL, '2024-06-30 05:55:19'),
-(9, 1, 54003, NULL, 'pay net', 500.00, 0.00, NULL, '2024-06-30 05:55:19', NULL, '2024-06-30 05:55:19'),
-(9, 2, 13001, NULL, 'reducing from sbi', 0.00, 500.00, NULL, '2024-06-30 05:55:19', NULL, '2024-06-30 05:55:19'),
+(9, 1, 54003, NULL, 'pay net', 500.00, 0.00, NULL, '2024-06-30 05:55:19', 'gooboy21', '2024-09-17 07:31:22'),
+(9, 2, 13001, NULL, 'reducing from sbi bank', 0.00, 500.00, NULL, '2024-06-30 05:55:19', 'gooboy21', '2024-09-17 07:31:22'),
 (10, 1, 11001, NULL, 'cash increase', 30000.00, 0.00, NULL, '2024-06-30 05:55:19', NULL, '2024-06-30 05:55:19'),
 (10, 2, 21001, NULL, 'payable increase', 0.00, 30000.00, NULL, '2024-06-30 05:55:19', NULL, '2024-06-30 05:55:19'),
 (11, 1, 54001, NULL, 'current paid', 1000.00, 0.00, NULL, '2024-06-30 05:55:19', NULL, '2024-06-30 05:55:19'),
@@ -765,10 +1904,35 @@ INSERT INTO `jrldetailed` (`EntryID`, `LineID`, `AccountID`, `EntityID`, `descri
 (25, 2, 13001, NULL, 'paying from sbi', 0.00, 200.00, NULL, '2024-08-02 14:48:44', NULL, '2024-08-02 14:48:44'),
 (31, 1, 13001, NULL, 'int', 200.00, 0.00, NULL, '2024-08-08 05:34:32', NULL, '2024-08-08 05:34:32'),
 (31, 2, 43001, NULL, 'int', 0.00, 200.00, NULL, '2024-08-08 05:34:32', NULL, '2024-08-08 05:34:32'),
-(32, 1, 12002, NULL, 'buying a machinery', 0.00, 0.00, NULL, '2024-08-11 04:01:05', NULL, '2024-08-11 04:01:05'),
-(32, 2, 13001, NULL, 'buying a machinery', 0.00, 0.00, NULL, '2024-08-11 04:01:05', NULL, '2024-08-11 04:01:05'),
 (33, 1, 12002, NULL, 'Secondary machinery', 1000.00, 0.00, NULL, '2024-08-11 04:13:12', NULL, '2024-08-11 04:13:12'),
-(33, 2, 13001, NULL, 'buying secondary machinery', 0.00, 1000.00, NULL, '2024-08-11 04:13:12', NULL, '2024-08-11 04:13:12');
+(33, 2, 13001, NULL, 'buying secondary machinery', 0.00, 1000.00, NULL, '2024-08-11 04:13:12', NULL, '2024-08-11 04:13:12'),
+(34, 1, 14003, NULL, 'Paying roshan', 500.00, 0.00, NULL, '2024-08-25 04:14:59', NULL, '2024-08-25 04:14:59'),
+(34, 2, 13001, NULL, 'Money from Sbi', 0.00, 500.00, NULL, '2024-08-25 04:14:59', NULL, '2024-08-25 04:14:59'),
+(35, 1, 14003, 3, 'Paid roshan', 500.00, 0.00, NULL, '2024-08-25 04:17:01', NULL, '2024-08-31 08:39:04'),
+(35, 2, 13001, NULL, 'From SBI', 0.00, 500.00, NULL, '2024-08-25 04:17:01', NULL, '2024-08-25 04:17:01'),
+(38, 1, 54001, NULL, 'ee', 300.00, 0.00, NULL, '2024-08-25 05:25:19', NULL, '2024-08-25 05:25:19'),
+(38, 2, 21004, NULL, 'kseb', 0.00, 300.00, NULL, '2024-08-25 05:25:19', NULL, '2024-08-25 05:25:19'),
+(54, 1, 51003, NULL, 'Paid gym fee', 250.00, 0.00, NULL, '2024-08-29 04:41:56', NULL, '2024-08-29 04:41:56'),
+(54, 2, 13001, NULL, 'sbi', 0.00, 150.00, NULL, '2024-08-29 04:41:56', NULL, '2024-08-29 04:41:56'),
+(54, 3, 11001, NULL, 'cash', 0.00, 100.00, NULL, '2024-08-29 04:41:56', NULL, '2024-08-29 04:41:56'),
+(55, 1, 51006, NULL, 'Bought Harry Potter JK', 500.00, 0.00, NULL, '2024-09-15 05:18:59', 'gooboy21', '2024-09-17 10:58:15'),
+(55, 2, 13001, NULL, 'Paid with Bank', 0.00, 500.00, NULL, '2024-09-15 05:18:59', 'gooboy21', '2024-09-17 10:58:15'),
+(55, 3, 51006, NULL, 'Bought WOZ', 120.00, 0.00, 'gooboy21', '2024-09-17 10:58:15', NULL, '2024-09-17 10:58:15'),
+(55, 4, 13001, NULL, 'paid with sbi', 0.00, 120.00, 'gooboy21', '2024-09-17 10:58:15', NULL, '2024-09-17 10:58:15'),
+(56, 1, 51003, NULL, 'Gym fee', 200.00, 0.00, NULL, '2024-09-15 06:05:21', NULL, '2024-09-15 06:05:21'),
+(56, 2, 13001, NULL, 'paying fee', 0.00, 200.00, NULL, '2024-09-15 06:05:21', NULL, '2024-09-15 06:05:21'),
+(57, 1, 51006, NULL, 'Another book', 150.00, 0.00, NULL, '2024-09-15 06:12:28', NULL, '2024-09-15 06:12:28'),
+(57, 2, 13001, NULL, 'Buying with sbi', 0.00, 150.00, NULL, '2024-09-15 06:12:28', NULL, '2024-09-15 06:12:28'),
+(58, 1, 57001, NULL, 'pizza', 200.00, 0.00, NULL, '2024-09-15 06:23:34', 'gooboy21', '2024-09-17 10:53:03'),
+(58, 2, 13001, NULL, 'from sbi', 0.00, 200.00, NULL, '2024-09-15 06:23:34', 'gooboy21', '2024-09-17 13:48:48'),
+(59, 1, 57001, NULL, 'bought pizza', 120.00, 0.00, 'gooboy21', '2024-09-15 06:26:57', 'gooboy21', '2024-09-19 06:34:26'),
+(59, 2, 13001, NULL, 'paid with sbi', 0.00, 120.00, 'gooboy21', '2024-09-15 06:26:57', 'gooboy21', '2024-09-15 06:38:39'),
+(59, 3, 57001, NULL, 'bought chips', 30.00, 0.00, 'gooboy21', '2024-09-17 10:46:47', 'gooboy21', '2024-09-17 10:50:49'),
+(59, 4, 11001, NULL, 'paid with cash', 0.00, 30.00, 'gooboy21', '2024-09-17 10:46:47', 'gooboy21', '2024-09-17 10:50:49'),
+(59, 5, 57001, NULL, 'bought soda', 15.00, 0.00, 'gooboy21', '2024-09-19 06:45:13', NULL, '2024-09-19 06:45:13'),
+(59, 6, 11001, NULL, 'cash', 0.00, 15.00, 'gooboy21', '2024-09-19 06:45:13', NULL, '2024-09-19 06:45:13'),
+(61, 1, 11001, NULL, 'Cash', 1000.00, 0.00, 'gooboy21', '2024-09-18 07:49:33', NULL, '2024-09-18 07:49:33'),
+(61, 2, 31002, NULL, 'Preferred Stock', 0.00, 1000.00, 'gooboy21', '2024-09-18 07:49:33', NULL, '2024-09-18 07:49:33');
 
 -- --------------------------------------------------------
 
@@ -795,7 +1959,7 @@ INSERT INTO `jrlmaster` (`EntryID`, `jdate`, `description`, `createdBy`, `create
 (2, '2024-01-01', 'paying electricity', 'Athul', '2024-06-30 05:55:19', NULL, '2024-06-30 05:55:19'),
 (3, '2024-01-02', 'taking some cash', 'Athul', '2024-06-30 05:55:19', NULL, '2024-06-30 05:55:19'),
 (4, '2024-01-02', 'buying food', 'Athul', '2024-06-30 05:55:19', NULL, '2024-06-30 05:55:19'),
-(5, '2024-01-03', 'STock market earnings', 'Athul', '2024-06-30 05:55:19', NULL, '2024-06-30 05:55:19'),
+(5, '2024-01-03', 'Stock market earnings', 'Athul', '2024-06-30 05:55:19', NULL, '2024-09-19 05:21:43'),
 (6, '2024-01-06', 'paying water bill', 'Athul', '2024-06-30 05:55:19', NULL, '2024-06-30 05:55:19'),
 (7, '2024-01-07', 'getting salary', 'Athul', '2024-06-30 05:55:19', NULL, '2024-06-30 05:55:19'),
 (8, '2024-01-08', 'interest received', 'Athul', '2024-06-30 05:55:19', NULL, '2024-06-30 05:55:19'),
@@ -807,8 +1971,18 @@ INSERT INTO `jrlmaster` (`EntryID`, `jdate`, `description`, `createdBy`, `create
 (25, '2024-11-12', 'buying pizza', NULL, '2024-08-02 14:48:44', NULL, '2024-08-02 14:48:44'),
 (30, '2024-11-12', 'trip to buzan', NULL, '2024-08-02 15:40:09', NULL, '2024-08-02 15:40:09'),
 (31, '2024-06-08', 'Sbi interest', NULL, '2024-08-08 05:34:32', NULL, '2024-08-08 05:34:32'),
-(32, '2024-08-11', 'Bought machinery', NULL, '2024-08-11 04:01:05', NULL, '2024-08-11 04:01:05'),
-(33, '2024-08-11', 'Machinery2', NULL, '2024-08-11 04:13:12', NULL, '2024-08-11 04:13:12');
+(33, '2024-08-11', 'Machinery2', NULL, '2024-08-11 04:13:12', NULL, '2024-08-11 04:13:12'),
+(34, '2024-08-25', 'Paying Roshan', NULL, '2024-08-25 04:14:59', NULL, '2024-08-25 04:14:59'),
+(35, '2024-08-25', 'Paying Roshan', NULL, '2024-08-25 04:17:01', NULL, '2024-08-25 04:17:01'),
+(38, '2024-08-25', 'paying electricity bill', NULL, '2024-08-25 05:25:19', NULL, '2024-08-25 05:25:19'),
+(54, '2024-08-29', 'Gym fee', NULL, '2024-08-29 04:41:56', NULL, '2024-08-29 04:41:56'),
+(55, '2024-09-15', 'Buying Books', NULL, '2024-09-15 05:18:59', NULL, '2024-09-15 05:18:59'),
+(56, '2024-09-15', 'Paying Gym fees', NULL, '2024-09-15 06:05:21', NULL, '2024-09-15 06:05:21'),
+(57, '2024-09-15', 'Book Purchase', NULL, '2024-09-15 06:12:28', NULL, '2024-09-15 06:12:28'),
+(58, '2024-09-15', 'Pizza', NULL, '2024-09-15 06:23:34', NULL, '2024-09-15 06:23:34'),
+(59, '2024-09-15', 'Pizza', 'gooboy21', '2024-09-15 06:26:57', 'gooboy21', '2024-09-19 06:34:26'),
+(60, '2024-09-18', 'Preferred Stock', 'gooboy21', '2024-09-18 07:46:24', NULL, '2024-09-18 07:46:24'),
+(61, '2024-09-18', 'Preferred Stock', 'gooboy21', '2024-09-18 07:49:33', NULL, '2024-09-18 07:49:33');
 
 -- --------------------------------------------------------
 
@@ -844,20 +2018,22 @@ CREATE TABLE `users2` (
   `userId` int(11) NOT NULL,
   `Firstname` varchar(50) NOT NULL,
   `LastName` varchar(50) NOT NULL,
-  `Phone` varchar(11) NOT NULL,
+  `Phone` bigint(20) DEFAULT NULL,
   `email` varchar(254) NOT NULL,
   `username` varchar(12) NOT NULL,
-  `password` varchar(254) NOT NULL
+  `password` varchar(254) NOT NULL,
+  `user_type` varchar(50) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
 -- Dumping data for table `users2`
 --
 
-INSERT INTO `users2` (`userId`, `Firstname`, `LastName`, `Phone`, `email`, `username`, `password`) VALUES
-(1, 'Athul', 'Sebastian', '8921866268', 'athulsebastiant@gmail.com', 'atskingly', '$argon2id$v=19$m=655'),
-(2, 'John', 'Doe', '0567778711', 'qw@gd.com', 'asqjhhuu', '$argon2id$v=19$m=655'),
-(3, 'Gin', 'V', '5786812791', 'gg@ff.a', 'gooboy21', '$argon2id$v=19$m=65536,t=4,p=1$bmdwVlAycVpDcjY3VkpLLg$fZCmDwvQ1fl8/za+FikWEbYQF2eg8ORT3RIt/tY2brQ');
+INSERT INTO `users2` (`userId`, `Firstname`, `LastName`, `Phone`, `email`, `username`, `password`, `user_type`) VALUES
+(3, 'Gin', 'V', 5786812791, 'gg@ff.a', 'gooboy21', '$argon2id$v=19$m=65536,t=4,p=1$bmdwVlAycVpDcjY3VkpLLg$fZCmDwvQ1fl8/za+FikWEbYQF2eg8ORT3RIt/tY2brQ', 'Admin'),
+(4, 'Donny', 'Boss', 6663334578, 'djkhalid@gmail.com', 'DBoss213', '$argon2id$v=19$m=65536,t=4,p=1$ZU9wM2NNUENZMWdqRGpvMA$IZbgBDaYhXL3Oy+X46KB90msaiNHvAiMFbwe0TRDOyU', 'Bookkeeper'),
+(5, 'Sardar', 'P', 1320562965, 'spd22@gmail.com', 'spdAudits', '$argon2id$v=19$m=65536,t=4,p=1$THY5dHZreU9tQW5HeXhkeA$k8ag8OfWTuSVr1GG4oXTgBm8YHfrem+38bhtDM37JqA', 'Auditor'),
+(6, 'Athul', 'Sebastian', 8899445512, 'athulsebastiant@gmail.com', 'athulseb23', '$argon2id$v=19$m=65536,t=4,p=1$L0g3SXZIbEk4RjBGQjBkUQ$gC+zXqvGnp66MOx2RZTOQh1uheDh5HkONl5C69iZlS4', 'Admin');
 
 --
 -- Indexes for dumped tables
@@ -919,9 +2095,9 @@ ALTER TABLE `users`
 --
 ALTER TABLE `users2`
   ADD PRIMARY KEY (`userId`),
-  ADD UNIQUE KEY `Phone` (`Phone`),
   ADD UNIQUE KEY `email` (`email`),
-  ADD UNIQUE KEY `username` (`username`);
+  ADD UNIQUE KEY `username` (`username`),
+  ADD UNIQUE KEY `Phone` (`Phone`);
 
 --
 -- AUTO_INCREMENT for dumped tables
@@ -937,7 +2113,7 @@ ALTER TABLE `entity`
 -- AUTO_INCREMENT for table `jrlmaster`
 --
 ALTER TABLE `jrlmaster`
-  MODIFY `EntryID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=34;
+  MODIFY `EntryID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=62;
 
 --
 -- AUTO_INCREMENT for table `users`
@@ -949,7 +2125,7 @@ ALTER TABLE `users`
 -- AUTO_INCREMENT for table `users2`
 --
 ALTER TABLE `users2`
-  MODIFY `userId` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
+  MODIFY `userId` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
 
 --
 -- Constraints for dumped tables
@@ -972,8 +2148,7 @@ ALTER TABLE `coa`
 -- Constraints for table `entity`
 --
 ALTER TABLE `entity`
-  ADD CONSTRAINT `entity_ibfk_1` FOREIGN KEY (`AccountNo`) REFERENCES `coa` (`AccountNo`),
-  ADD CONSTRAINT `entity_ibfk_2` FOREIGN KEY (`name`) REFERENCES `coa` (`AccountName`);
+  ADD CONSTRAINT `entity_ibfk_1` FOREIGN KEY (`AccountNo`) REFERENCES `coa` (`AccountNo`);
 
 --
 -- Constraints for table `jrldetailed`
@@ -1021,7 +2196,19 @@ INSERT INTO `bookings` (`booking_id`, `event_id`, `user_id`, `num_tickets`, `tot
 (14, 104, 0, 3, 1200.00, '2024-07-28 12:59:33'),
 (15, 104, 0, 2, 800.00, '2024-07-28 13:04:18'),
 (16, 103, 0, 5, 250.00, '2024-07-28 13:14:26'),
-(17, 104, 0, 2, 800.00, '2024-08-07 12:52:42');
+(17, 104, 0, 2, 800.00, '2024-08-07 12:52:42'),
+(18, 101, 0, 2, 400.00, '2024-08-21 12:15:16'),
+(19, 101, 0, 2, 400.00, '2024-08-21 12:17:02'),
+(20, 101, 0, 2, 400.00, '2024-08-21 12:20:37'),
+(21, 102, 0, 3, 600.00, '2024-09-04 19:17:27'),
+(22, 103, 0, 3, 150.00, '2024-09-05 07:37:30'),
+(23, 103, 0, 2, 100.00, '2024-09-05 07:43:00'),
+(24, 104, 0, 3, 1200.00, '2024-09-05 07:44:26'),
+(25, 103, 0, 9, 450.00, '2024-09-05 07:59:00'),
+(26, 101, 0, 6, 1200.00, '2024-09-05 08:04:19'),
+(27, 102, 0, 7, 1400.00, '2024-09-05 08:07:48'),
+(28, 102, 0, 6, 1200.00, '2024-09-05 08:13:06'),
+(29, 104, 0, 6, 2400.00, '2024-09-05 09:00:36');
 
 -- --------------------------------------------------------
 
@@ -1047,10 +2234,10 @@ CREATE TABLE `events` (
 --
 
 INSERT INTO `events` (`event_id`, `title`, `description`, `date`, `time`, `location`, `image`, `total_tickets`, `available_tickets`, `price`) VALUES
-(101, 'Justin Bieber\'s concert', 'JB at Mumbai', '2024-09-03', '21:45:30', 'Mumbai', 'jbconcert.webp', 500, 242, 200.00),
-(102, 'Tedx Mumbai', 'Ted talk season 4', '2024-09-05', '21:45:30', 'Mumbai', 'tedx.jpg', 500, 243, 200.00),
-(103, 'Stand up with Atul Khatri', 'Renowned comedian Atul Khatri takes the audience for a fun time.', '2024-09-12', '10:17:46', 'Mumbai', 'atulkhatri.jpg', 100, 10, 50.00),
-(104, 'IPL - MI vs CSK', 'Mumbai Indians vs Chennai Super Kings', '2024-08-14', '18:36:56', 'Mumbai', 'mi.webp', 600, 443, 400.00);
+(101, 'Justin Bieber\'s concert', 'JB at Mumbai', '2024-11-06', '21:45:30', 'Mumbai', 'jbconcert.webp', 500, 234, 200.00),
+(102, 'Tedx Mumbai', 'Ted talk season 4', '2024-09-26', '21:45:30', 'Mumbai', 'tedx.jpg', 500, 227, 200.00),
+(103, 'Stand up with Atul Khatri', 'Renowned comedian Atul Khatri takes the audience for a fun time.', '2024-09-12', '10:17:46', 'Mumbai', 'atulkhatri.jpg', 100, 1, 50.00),
+(104, 'IPL - MI vs CSK', 'Mumbai Indians vs Chennai Super Kings', '2024-10-16', '18:36:56', 'Mumbai', 'mi.webp', 600, 434, 400.00);
 
 -- --------------------------------------------------------
 
@@ -1063,7 +2250,7 @@ CREATE TABLE `payment` (
   `name` varchar(255) DEFAULT NULL,
   `email` varchar(255) DEFAULT NULL,
   `mobile_number` varchar(255) DEFAULT NULL,
-  `payment_amount` decimal(5,2) DEFAULT NULL,
+  `payment_amount` decimal(10,2) DEFAULT NULL,
   `order_id` varchar(10) DEFAULT NULL,
   `order_status` varchar(10) DEFAULT NULL,
   `booking_id` int(10) UNSIGNED NOT NULL
@@ -1074,15 +2261,16 @@ CREATE TABLE `payment` (
 --
 
 INSERT INTO `payment` (`id`, `name`, `email`, `mobile_number`, `payment_amount`, `order_id`, `order_status`, `booking_id`) VALUES
-(5, 'Athul Sebastian', 'athulsebastiant@gmail.com', '08921866268', 100.00, 'OR53124169', 'success', 9),
-(6, 'Justin', 'jb23@gmail.com', '01234567891', 400.00, 'OR54275688', 'success', 10),
-(7, 'Ram', 'rrkabel@gg.com', '7453532325', 400.00, 'OR55547962', 'success', 11),
-(8, 'Faf', 'ff@gg.cm', '2121212122121', 150.00, 'OR55739607', 'success', 12),
-(9, 'Raju', 'rr@69hh.com', '212121124', 600.00, 'OR56512058', 'success', 13),
-(10, 'Athul Sebastian', 'athulsebastiant@gmail.com', '08921866268', 999.99, 'OR51773264', 'success', 14),
-(11, 'Athul Sebastian', 'athulsebastiant@gmail.com', '08921866268', 800.00, 'OR52058125', 'success', 15),
-(12, 'Athul Sebastian', 'athulsebastiant@gmail.com', '08921866268', 250.00, 'OR52666257', 'success', 16),
-(13, 'Athul Sebastian', 'athulsebastiant@gmail.com', '8921677781', 800.00, 'OR15362211', 'success', 17);
+(0, 'Lilly', 'lillygeorge0225@gmail.com', '08921866267', 400.00, 'OR23037676', 'success', 20),
+(0, 'Sivan', 'sstp@gmail.com', '2034891332', 600.00, 'OR57647301', 'success', 21),
+(0, 'Sivan', 'sstp@gmail.com', '2034891332', 150.00, 'OR02050729', 'pending', 22),
+(0, 'King Sebastian', 'kingsebastiant@gmail.com', '08921866267', 100.00, 'OR02380540', 'pending', 23),
+(0, 'King Sebastian', 'kingsebastiant@gmail.com', '08921866267', 999.99, 'OR02466247', 'success', 24),
+(0, 'Raju', 'rr@69hh.com', '2121211241212', 450.00, 'OR03340107', 'success', 25),
+(0, 'King Sebastian', 'kingsebastiant@gmail.com', '08921866267', 999.99, 'OR03659016', 'success', 26),
+(0, 'Sardar P', 'spd22@gmail.com', '01320562965', 999.99, 'OR03868337', 'success', 27),
+(0, 'Sardar P', 'spd22@gmail.com', '01320562965', 1200.00, 'OR04186280', 'success', 28),
+(0, 'Sardar P', 'spd22@gmail.com', '01320562965', 2400.00, 'OR07036526', 'success', 29);
 
 -- --------------------------------------------------------
 
@@ -1117,13 +2305,6 @@ ALTER TABLE `events`
   ADD PRIMARY KEY (`event_id`);
 
 --
--- Indexes for table `payment`
---
-ALTER TABLE `payment`
-  ADD PRIMARY KEY (`id`),
-  ADD UNIQUE KEY `booking_id` (`booking_id`);
-
---
 -- Indexes for table `users`
 --
 ALTER TABLE `users`
@@ -1139,19 +2320,13 @@ ALTER TABLE `users`
 -- AUTO_INCREMENT for table `bookings`
 --
 ALTER TABLE `bookings`
-  MODIFY `booking_id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=18;
+  MODIFY `booking_id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=30;
 
 --
 -- AUTO_INCREMENT for table `events`
 --
 ALTER TABLE `events`
   MODIFY `event_id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=105;
-
---
--- AUTO_INCREMENT for table `payment`
---
-ALTER TABLE `payment`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=14;
 
 --
 -- AUTO_INCREMENT for table `users`
@@ -1168,12 +2343,6 @@ ALTER TABLE `users`
 --
 ALTER TABLE `bookings`
   ADD CONSTRAINT `bookings_ibfk_1` FOREIGN KEY (`event_id`) REFERENCES `events` (`event_id`);
-
---
--- Constraints for table `payment`
---
-ALTER TABLE `payment`
-  ADD CONSTRAINT `fk_payment_bookings` FOREIGN KEY (`booking_id`) REFERENCES `bookings` (`booking_id`);
 --
 -- Database: `phpmyadmin`
 --
@@ -1323,7 +2492,7 @@ CREATE TABLE `pma__recent` (
 --
 
 INSERT INTO `pma__recent` (`username`, `tables`) VALUES
-('root', '[{\"db\":\"ac2\",\"table\":\"users2\"},{\"db\":\"ac2\",\"table\":\"entity\"},{\"db\":\"ac2\",\"table\":\"coa\"},{\"db\":\"ac2\",\"table\":\"accountsub\"},{\"db\":\"ac2\",\"table\":\"accountmaster\"},{\"db\":\"ac2\",\"table\":\"jrlmaster\"},{\"db\":\"ac2\",\"table\":\"jrldetailed\"},{\"db\":\"ac2\",\"table\":\"users\"},{\"db\":\"evm\",\"table\":\"events\"},{\"db\":\"evm\",\"table\":\"payment\"}]');
+('root', '[{\"db\":\"ac2\",\"table\":\"jrlmaster\"},{\"db\":\"ac2\",\"table\":\"jrldetailed\"},{\"db\":\"ac2\",\"table\":\"equitytable\"},{\"db\":\"ac2\",\"table\":\"liatable\"},{\"db\":\"ac2\",\"table\":\"accountsub\"},{\"db\":\"ac2\",\"table\":\"accountmaster\"},{\"db\":\"ac2\",\"table\":\"coa\"},{\"db\":\"ac2\",\"table\":\"bs1\"},{\"db\":\"ac2\",\"table\":\"bs\"},{\"db\":\"ac2\",\"table\":\"le\"}]');
 
 -- --------------------------------------------------------
 
@@ -1430,7 +2599,7 @@ CREATE TABLE `pma__userconfig` (
 --
 
 INSERT INTO `pma__userconfig` (`username`, `timevalue`, `config_data`) VALUES
-('root', '2024-08-14 03:12:06', '{\"Console\\/Mode\":\"show\",\"Console\\/Height\":-73.01050000000001}');
+('root', '2024-09-19 06:45:22', '{\"Console\\/Mode\":\"show\",\"Console\\/Height\":18.99000000000001}');
 
 -- --------------------------------------------------------
 

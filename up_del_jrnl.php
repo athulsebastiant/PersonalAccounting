@@ -45,6 +45,10 @@ $updateSql = "UPDATE jrldetailed
 // Prepare the SQL delete statement
 $deleteSql = "DELETE FROM jrldetailed WHERE EntryID = ? AND LineID = ?";
 
+$updateMasterSql = "UPDATE jrlmaster 
+                    SET modifiedBy = '$username' 
+                    WHERE EntryID = ?";
+
 // Begin a transaction
 $conn->begin_transaction();
 
@@ -101,6 +105,20 @@ try {
         $response['details'][] = "Line $lineID deleted successfully";
     }
 
+    $updateMasterStmt = $conn->prepare($updateMasterSql);
+    if (!$updateMasterStmt) {
+        throw new Exception('SQL preparation error for jrlmaster: ' . $conn->error);
+    }
+
+    // Bind the entryId to the jrlmaster update statement
+    $updateMasterStmt->bind_param("i", $entryId);
+
+    // Execute the jrlmaster update
+    if (!$updateMasterStmt->execute()) {
+        throw new Exception("Error updating jrlmaster for EntryID $entryId: " . $updateMasterStmt->error);
+    }
+
+    $response['details'][] = "jrlmaster updated successfully";
     // Commit the transaction
     $conn->commit();
 } catch (Exception $e) {
@@ -112,7 +130,7 @@ try {
 
 // Close the statements
 if (isset($updateStmt)) $updateStmt->close();
-if (isset($insertStmt)) $insertStmt->close();
+
 if (isset($deleteStmt)) $deleteStmt->close();
 
 // Close the database connection

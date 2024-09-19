@@ -21,7 +21,7 @@ if ($conn->connect_error) {
 }
 $t2 = "jrldetailed";
 // SQL query to fetch data from the table
-$sql = "SELECT jdate, $tableName.EntryID, $tableName.description, sum($t2.CreditAmount) AS 'Total', $tableName.createdBy, $tableName.createdDateTime FROM $tableName
+$sql = "SELECT jdate, $tableName.EntryID, $tableName.description, sum($t2.CreditAmount) AS 'Total', $tableName.createdBy, $tableName.createdDateTime, $tableName.modifiedBy, $tableName.modifiedDateTime FROM $tableName
 INNER JOIN $t2 ON
 $tableName.EntryID = $t2.EntryID group by $tableName.EntryID";
 $result = $conn->query($sql);
@@ -183,6 +183,9 @@ $result = $conn->query($sql);
                 <th>Total</th>
                 <th>Created By</th>
                 <th>Created Date Time</th>
+                <th>Modified By</th>
+                <th>Modified Date Time</th>
+
             </tr>
         </thead>
         <tbody>
@@ -196,12 +199,13 @@ $result = $conn->query($sql);
                             <td>" . $row["description"] . "</td>
                             <td>" . $row["Total"] . "</td>
                             <td>" . $row["createdBy"] . "</td>
-                            
                             <td>" . $row["createdDateTime"] . "</td>
+                            <td>" . $row["modifiedBy"] . "</td>
+                            <td>" . $row["modifiedDateTime"] . "</td>
                           </tr>";
                 }
             } else {
-                echo "<tr><td colspan='4'>No results found</td></tr>";
+                echo "<tr><td colspan='8'>No results found</td></tr>";
             }
             $conn->close();
             ?>
