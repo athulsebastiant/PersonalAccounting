@@ -7,7 +7,9 @@ if (!isset($_SESSION['username'])) {
     header("Location: loginpg2.php");
     exit();
 }
-
+$company_info_sql = "SELECT company_name, address, registration_number, phone_number, email, logo_path FROM company_info LIMIT 1";
+$company_info_result = $conn->query($company_info_sql);
+$company_info = $company_info_result->fetch_assoc();
 // Call the stored procedure
 $sql = "CALL PandL31()";
 $result = $conn->query($sql);
@@ -21,6 +23,24 @@ $result = $conn->query($sql);
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
+        .company-info {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .company-info img {
+            max-width: 130px;
+            height: auto;
+        }
+
+        .company-info h2 {
+            margin: 10px 0;
+        }
+
+        .company-info p {
+            margin: 5px 0;
+        }
+
         .highlight-loss {
             color: red;
             font-weight: bold;
@@ -192,6 +212,17 @@ $result = $conn->query($sql);
             <h1>Profit and Loss</h1>
             <div class="date"><?php echo date("Y-m-d"); ?></div>
         </div>
+        <div class="company-info">
+            <?php if ($company_info['logo_path']): ?>
+                <img src="<?php echo htmlspecialchars($company_info['logo_path']); ?>" alt="Company Logo">
+            <?php endif; ?>
+            <h2><?php echo htmlspecialchars($company_info['company_name']); ?></h2>
+            <p><?php echo htmlspecialchars($company_info['address']); ?></p>
+            <p>Phone: <?php echo htmlspecialchars($company_info['phone_number']); ?></p>
+            <p>Email: <?php echo htmlspecialchars($company_info['email']); ?></p>
+            <p>Registration Number: <?php echo htmlspecialchars($company_info['registration_number']); ?></p>
+        </div>
+
 
         <table>
             <thead>
