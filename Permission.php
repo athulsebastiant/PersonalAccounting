@@ -27,7 +27,7 @@ if ($result->num_rows > 0) {
     }
 } else {
     // If no user found, redirect to the login page (or handle it as needed)
-    header("Location: login.php");
+    header("Location: loginpg2.php");
     exit();
 }
 

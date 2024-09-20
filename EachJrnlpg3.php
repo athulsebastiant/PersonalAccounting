@@ -2,7 +2,11 @@
 // Database configuration
 include "SessionPG.php";
 include "Connection.php";
-
+if ($_SESSION['user_type'] == "Auditor") {
+    // Redirect to login page if not logged in
+    header("Location: Homepg.php");
+    exit();
+}
 // Fetch EntryID from query parameter
 if (isset($_GET['EntryID'])) {
     // Retrieve the EntryID from the URL
@@ -56,6 +60,9 @@ WHERE
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="Syles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
     <style>
         .journal-container {
             max-width: 100%;
@@ -129,74 +136,6 @@ WHERE
             font-weight: bold;
         }
 
-        .navbar {
-            background-color: #333;
-            overflow: hidden;
-            display: flex;
-            align-items: center;
-            font-family: Arial, sans-serif;
-            /* Set a consistent font */
-        }
-
-        .navbar a,
-        .navbar .dropbtn {
-            color: white;
-            text-align: center;
-            padding: 14px 20px;
-            /* Increased horizontal padding */
-            text-decoration: none;
-            font-size: 16px;
-            /* Consistent font size */
-        }
-
-        .dropdown {
-            overflow: hidden;
-        }
-
-        .dropdown .dropbtn {
-            border: none;
-            outline: none;
-            background-color: inherit;
-            margin: 0;
-            cursor: pointer;
-        }
-
-        .navbar a:hover,
-        .dropdown:hover .dropbtn {
-            background-color: #ddd;
-            color: black;
-        }
-
-        .dropdown-content {
-            display: none;
-            position: absolute;
-            background-color: #f9f9f9;
-            min-width: 160px;
-            box-shadow: 0px 8px 16px 0px rgba(0, 0, 0, 0.2);
-            z-index: 1;
-        }
-
-        .dropdown-content a {
-            float: none;
-            color: black;
-            padding: 12px 16px;
-            text-decoration: none;
-            display: block;
-            text-align: left;
-        }
-
-        .dropdown-content a:hover {
-            background-color: #ddd;
-        }
-
-        .dropdown:hover .dropdown-content {
-            display: block;
-        }
-
-        /* Push logout to the right */
-        .navbar a:last-child {
-            margin-left: auto;
-        }
 
         .filter-buttons {
             margin-bottom: 15px;

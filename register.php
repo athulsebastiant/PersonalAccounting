@@ -12,13 +12,16 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     //$password = password_hash($_POST['password'], PASSWORD_DEFAULT); // hash the password for security
     $password = password_hash($_POST['password'], PASSWORD_ARGON2ID);
 
-    $sql = "INSERT INTO users2 (firstname, lastname, email, phone, username, `password`)
-            VALUES ('$firstname', '$lastname', '$email', '$phone', '$username', '$password')";
+    $sql = "INSERT INTO users2 (firstname, lastname, email, phone, username, `password`,user_type)
+            VALUES ('$firstname', '$lastname', '$email', '$phone', '$username', '$password','Auditor')";
 
     if ($conn->query($sql) === TRUE) {
-        echo "New record created successfully";
+        echo "Account Successfully Created";
+        header('Location: loginpg2.php');
+        exit;
     } else {
         echo "Error: " . $sql . "<br>" . $conn->error;
+        header('Location: registrationpg.php');
     }
 
     $conn->close();

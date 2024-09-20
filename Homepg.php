@@ -1,11 +1,6 @@
 <?php
-session_start();
-if (!isset($_SESSION['username'])) {
-    // Redirect to login page if not logged in
-    header("Location: loginpg2.php");
-    exit();
-} ?>
-
+include "SessionPG.php";
+?>
 <!DOCTYPE html>
 <html lang="en">
 
@@ -13,74 +8,16 @@ if (!isset($_SESSION['username'])) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Personal Accounting - Home</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="Syles.css">
     <style>
-        .navbar {
-            background-color: #333;
-            overflow: hidden;
-            display: flex;
-            align-items: center;
-            font-family: Arial, sans-serif;
-            /* Set a consistent font */
-        }
-
-        .navbar a,
-        .navbar .dropbtn {
-            color: white;
-            text-align: center;
-            padding: 14px 20px;
-            /* Increased horizontal padding */
-            text-decoration: none;
-            font-size: 16px;
-            /* Consistent font size */
-        }
-
-        .dropdown {
-            overflow: hidden;
-        }
-
-        .dropdown .dropbtn {
-            border: none;
-            outline: none;
-            background-color: inherit;
-            margin: 0;
-            cursor: pointer;
-        }
-
-        .navbar a:hover,
-        .dropdown:hover .dropbtn {
-            background-color: #ddd;
-            color: black;
-        }
-
-        .dropdown-content {
-            display: none;
-            position: absolute;
-            background-color: #f9f9f9;
-            min-width: 160px;
-            box-shadow: 0px 8px 16px 0px rgba(0, 0, 0, 0.2);
-            z-index: 1;
-        }
-
-        .dropdown-content a {
-            float: none;
-            color: black;
-            padding: 12px 16px;
-            text-decoration: none;
-            display: block;
-            text-align: left;
-        }
-
-        .dropdown-content a:hover {
-            background-color: #ddd;
-        }
-
-        .dropdown:hover .dropdown-content {
-            display: block;
-        }
-
-        /* Push logout to the right */
-        .navbar a:last-child {
-            margin-left: auto;
+        body {
+            background-image: url('HomeImage.png');
+            background-size: 100% 100%;
+            /* Ensures the image scales to cover both width and height */
+            background-position: center;
+            background-repeat: no-repeat;
+            background-attachment: fixed;
         }
 
         .content-container {
@@ -88,16 +25,14 @@ if (!isset($_SESSION['username'])) {
             justify-content: center;
             align-items: center;
             height: calc(100vh - 50px);
-            /* Adjust based on navbar height */
             gap: 20px;
-            /* Space between squares */
+
+
         }
 
         .content-div {
             width: 300px;
-            /* Fixed width */
             height: 300px;
-            /* Same as width to make it square */
             padding: 20px;
             border: 1px solid #ddd;
             box-sizing: border-box;
@@ -107,6 +42,8 @@ if (!isset($_SESSION['username'])) {
             align-items: center;
             text-align: center;
             background-color: #f0f0f0;
+            transition: background-color 0.3s ease;
+            background-color: rgba(255, 255, 255, 0.92);
         }
 
         .content-div a {
@@ -120,9 +57,19 @@ if (!isset($_SESSION['username'])) {
             height: 100%;
         }
 
+        .content-div h2 {
+            color: #4CAF50;
+        }
+
         .content-div:hover {
             background-color: #e0e0e0;
             cursor: pointer;
+        }
+
+        h1 {
+            text-align: center;
+            color: white;
+            text-shadow: 1px 1px 3px black;
         }
     </style>
 </head>
@@ -146,7 +93,8 @@ if (!isset($_SESSION['username'])) {
         <a href="logout.php">Logout</a>
     </div>
     <br>
-    <h1>Welcome, <?php echo htmlspecialchars($_SESSION['username']); ?> You're the <?php echo htmlspecialchars($_SESSION['user_type']); ?>!</h1>
+
+    <h1>Welcome, <?php echo htmlspecialchars($_SESSION['username']); ?>. You're the <?php echo htmlspecialchars($_SESSION['user_type']); ?>!</h1>
     <br>
     <div class="content-container">
         <div class="content-div">
