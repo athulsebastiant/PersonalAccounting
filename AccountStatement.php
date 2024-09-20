@@ -1,9 +1,6 @@
 <?php
 include "Connection.php";
-$company_info_sql = "SELECT company_name, address, registration_number, phone_number, email, logo_path FROM company_info LIMIT 1";
-$company_info_result = $conn->query($company_info_sql);
-$company_info = $company_info_result->fetch_assoc() ?>
-
+?>
 
 
 <!DOCTYPE html>
@@ -14,24 +11,6 @@ $company_info = $company_info_result->fetch_assoc() ?>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Balance Sheet</title>
     <style>
-        .company-info {
-            text-align: center;
-            margin-bottom: 20px;
-        }
-
-        .company-info img {
-            max-width: 130px;
-            height: auto;
-        }
-
-        .company-info h2 {
-            margin: 10px 0;
-        }
-
-        .company-info p {
-            margin: 5px 0;
-        }
-
         /* Your existing CSS styles here */
         #account-select,
         #fromDate,
@@ -177,16 +156,7 @@ $company_info = $company_info_result->fetch_assoc() ?>
         <button type="submit">Generate Statement</button>
     </form>
     <br>
-    <div class="company-info">
-        <?php if ($company_info['logo_path']): ?>
-            <img src="<?php echo htmlspecialchars($company_info['logo_path']); ?>" alt="Company Logo">
-        <?php endif; ?>
-        <h2><?php echo htmlspecialchars($company_info['company_name']); ?></h2>
-        <p><?php echo htmlspecialchars($company_info['address']); ?></p>
-        <p>Phone: <?php echo htmlspecialchars($company_info['phone_number']); ?></p>
-        <p>Email: <?php echo htmlspecialchars($company_info['email']); ?></p>
-        <p>Registration Number: <?php echo htmlspecialchars($company_info['registration_number']); ?></p>
-    </div>
+
     <div id="result-container"></div>
 
     <script>

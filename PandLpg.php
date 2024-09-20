@@ -185,6 +185,19 @@ $result = $conn->query($sql);
             color: red;
             font-weight: bold;
         }
+
+        .pdf-button {
+            background-color: #4CAF50;
+            border: none;
+            color: white;
+            padding: 15px 32px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 16px;
+            margin: 4px 2px;
+            cursor: pointer;
+        }
     </style>
     <title>Profit and Loss</title>
 </head>
@@ -208,6 +221,10 @@ $result = $conn->query($sql);
     </div>
     <br>
     <div class="journal-container">
+
+        <form action="generate_pnl_pdf.php" method="post">
+            <button type="submit" class="pdf-button">Download PDF</button>
+        </form>
         <div class="journal-header">
             <h1>Profit and Loss</h1>
             <div class="date"><?php echo date("Y-m-d"); ?></div>

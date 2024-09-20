@@ -7,7 +7,7 @@ if (!isset($_SESSION['username'])) {
     exit();
 }
 include "Connection.php";
-
+require('fpdf/fpdf.php');
 $company_info_sql = "SELECT company_name, address, registration_number, phone_number, email, logo_path FROM company_info LIMIT 1";
 $company_info_result = $conn->query($company_info_sql);
 $company_info = $company_info_result->fetch_assoc();
@@ -186,6 +186,29 @@ $result = $conn->query($sql);
             color: purple;
             font-weight: bold;
         }
+
+        .pdf-button {
+            background-color: #4CAF50;
+            border: none;
+            color: white;
+            padding: 15px 32px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 16px;
+            margin: 4px 2px;
+            cursor: pointer;
+        }
+
+        .success-message {
+            background-color: #dff0d8;
+            border-color: #d6e9c6;
+            color: #3c763d;
+            padding: 15px;
+            margin-bottom: 20px;
+            border: 1px solid transparent;
+            border-radius: 4px;
+        }
     </style>
     <title>Balance Sheet</title>
 </head>
@@ -210,10 +233,14 @@ $result = $conn->query($sql);
     <br>
 
     <div class="journal-container">
+
         <div class="journal-header">
             <h1>Balance Sheet</h1>
             <div class="date"><?php echo date("Y-m-d"); ?></div>
         </div>
+        <form action="generate_balance_sheet_pdf.php" method="post">
+            <button type="submit" class="pdf-button">Download PDF</button>
+        </form>
         <div class="company-info">
             <?php if ($company_info['logo_path']): ?>
                 <img src="<?php echo htmlspecialchars($company_info['logo_path']); ?>" alt="Company Logo">
