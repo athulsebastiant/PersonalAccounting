@@ -1,3 +1,18 @@
+<?php
+// Include database connection
+include "Connection.php";
+
+// Check if a row exists in the company_info table
+$checkSql = "SELECT COUNT(*) as count FROM company_info";
+$checkResult = $conn->query($checkSql);
+
+if ($checkResult && $checkResult->fetch_assoc()['count'] == 0) {
+    // No row exists, redirect to GeneralSettings.php
+    header("Location: GeneralSettings.php");
+    exit();
+}
+?>
+
 <!DOCTYPE html>
 <html lang="en">
 
@@ -110,7 +125,8 @@
             margin: 20px auto;
         }
 
-        .edit-btn {
+        .edit-btn,
+        .save-btn {
             display: block;
             width: 200px;
             margin: 20px auto;
@@ -122,8 +138,26 @@
             border-radius: 5px;
         }
 
-        .edit-btn:hover {
+        .edit-btn:hover,
+        .save-btn:hover {
             background-color: #45a049;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+        }
+
+        .info-item textarea {
+            width: calc(100% - 160px);
+            margin-left: 150px;
+        }
+
+        input[type="file"] {
+            margin-left: 150px;
         }
     </style>
 </head>
@@ -164,26 +198,35 @@
                 <div class="info-item">
                     <label>Company Name:</label>
                     <span><?php echo htmlspecialchars($row["company_name"]); ?></span>
+                    <input type="text" name="company_name" class="hidden" value="<?php echo htmlspecialchars($row["company_name"]); ?>">
                 </div>
                 <div class="info-item">
                     <label>Address:</label>
                     <span><?php echo nl2br(htmlspecialchars($row["address"])); ?></span>
+                    <textarea name="address" class="hidden"><?php echo htmlspecialchars($row["address"]); ?></textarea>
                 </div>
                 <div class="info-item">
                     <label>Registration No:</label>
                     <span><?php echo htmlspecialchars($row["registration_number"]); ?></span>
+                    <input type="text" name="registration_number" class="hidden" value="<?php echo htmlspecialchars($row["registration_number"]); ?>">
                 </div>
                 <div class="info-item">
                     <label>Phone Number:</label>
                     <span><?php echo htmlspecialchars($row["phone_number"]); ?></span>
+                    <input type="text" name="phone_number" class="hidden" value="<?php echo htmlspecialchars($row["phone_number"]); ?>">
                 </div>
                 <div class="info-item">
                     <label>Email:</label>
                     <span><?php echo htmlspecialchars($row["email"]); ?></span>
+                    <input type="email" name="email" class="hidden" value="<?php echo htmlspecialchars($row["email"]); ?>">
                 </div>
                 <?php if (!empty($row["logo_path"])): ?>
-                    <img src="ASI.jpg" alt="Company Logo" class="company-logo">
+                    <img src="<?php echo htmlspecialchars($row["logo_path"]); ?>" alt="Company Logo" class="company-logo">
                 <?php endif; ?>
+                <div class="info-item">
+                    <label>Change Logo:</label>
+                    <input type="file" name="logo" class="hidden" accept=".jpg,.jpeg,.png">
+                </div>
             </div>
         <?php
         } else {
@@ -192,8 +235,63 @@
         $conn->close();
         ?>
 
-        <a href="GeneralSettings.php" class="edit-btn">Change Company Information</a>
+        <button id="edit-btn" class="edit-btn">Edit</button>
+        <button id="save-btn" class="save-btn hidden">Save</button>
     </div>
+
+    <script>
+        const editBtn = document.getElementById("edit-btn");
+        const saveBtn = document.getElementById("save-btn");
+        const spans = document.querySelectorAll(".company-info span");
+        const inputs = document.querySelectorAll(".company-info input, .company-info textarea");
+
+        editBtn.addEventListener("click", () => {
+            spans.forEach(span => span.classList.add("hidden"));
+            inputs.forEach(input => input.classList.remove("hidden"));
+            editBtn.classList.add("hidden");
+            saveBtn.classList.remove("hidden");
+        });
+
+        // Additional code for image preview (optional)
+        document.querySelector('input[name="logo"]').addEventListener("change", function(event) {
+            const imgPreview = document.querySelector('.company-logo');
+            const file = event.target.files[0];
+            if (file) {
+                imgPreview.src = URL.createObjectURL(file);
+            }
+        });
+
+        saveBtn.addEventListener("click", () => {
+            const companyData = {
+                company_name: inputs[0].value,
+                address: inputs[1].value,
+                registration_number: inputs[2].value,
+                phone_number: inputs[3].value,
+                email: inputs[4].value,
+                logo_filename: document.querySelector('input[name="logo"]').files[0] ? document.querySelector('input[name="logo"]').files[0].name : ""
+            };
+
+            fetch("update_company_info.php", {
+                    method: "POST",
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(companyData)
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert(data.message);
+                        location.reload(); // Reload the page to reflect changes
+                    } else {
+                        alert("Error: " + data.message);
+                    }
+                })
+                .catch(error => {
+                    console.error("Error:", error);
+                });
+        });
+    </script>
 </body>
 
 </html>

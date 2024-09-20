@@ -150,23 +150,23 @@
         <form id="companySettingsForm" enctype="multipart/form-data">
             <div class="form-group">
                 <label for="CompanyName">Company Name:</label>
-                <input name="CompanyName" type="text" placeholder="Enter your company name">
+                <input name="CompanyName" type="text" placeholder="Enter your company name" required>
             </div>
             <div class="form-group">
                 <label for="Address">Company Address:</label>
-                <textarea name="Address" placeholder="Enter your Company address"></textarea>
+                <textarea name="Address" placeholder="Enter your Company address" required></textarea>
             </div>
             <div class="form-group">
                 <label for="RegNo">Registration Number:</label>
-                <input name="RegNo" type="text" placeholder="Enter your company registration No.">
+                <input name="RegNo" type="text" placeholder="Enter your company registration No." required>
             </div>
             <div class="form-group">
                 <label for="phn">Phone Number:</label>
-                <input name="phn" type="text" placeholder="Enter your company phone number">
+                <input name="phn" type="text" placeholder="Enter your company phone number" required>
             </div>
             <div class="form-group">
                 <label for="email">Email:</label>
-                <input name="email" type="text" placeholder="Enter your company email id">
+                <input name="email" type="text" placeholder="Enter your company email id" required>
             </div>
             <div class="form-group">
                 <label for="logo">Company Logo:</label>

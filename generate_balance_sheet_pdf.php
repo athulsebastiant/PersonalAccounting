@@ -55,10 +55,10 @@ class BalanceSheetPDF extends FPDF
 
         $this->SetFont('Arial', 'B', 10);
         $this->SetFillColor(200, 220, 255);
-        $this->Cell(15, 7, 'AccountID', 1, 0, 'C', true);
+        $this->Cell(15, 7, 'Acc.ID', 1, 0, 'C', true);
         $this->Cell(55, 7, 'Account Name', 1, 0, 'C', true);
         $this->Cell(30, 7, 'Debit', 1, 0, 'C', true);
-        $this->Cell(15, 7, 'AccountID', 1, 0, 'C', true);
+        $this->Cell(15, 7, 'Acc.ID', 1, 0, 'C', true);
         $this->Cell(55, 7, 'Account Name', 1, 0, 'C', true);
         $this->Cell(30, 7, 'Credit', 1, 1, 'C', true);
 

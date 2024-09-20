@@ -286,7 +286,7 @@ WHERE
                 <a href="AccountStatement.php">Account Statement</a>
             </div>
         </div>
-
+        <a href="view_company_info.php">General Settings</a>
         <a href="logout.php">Logout</a>
     </div>
     <br>

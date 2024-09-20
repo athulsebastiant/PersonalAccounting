@@ -21,11 +21,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         $targetFilePath = $filename;
 
+        $deleteQuery = "DELETE FROM company_info";
+        if ($conn->query($deleteQuery) === TRUE) {
+            $response['delete_message'] = "All records deleted successfully.";
+        } else {
+            $response['success'] = false;
+            $response['message'] = "Error deleting records: " . $conn->error;
+            echo json_encode($response);
+            exit; // Stop further execution in case of deletion failure
+        }
 
 
         // Here, insert the company details along with the logo file path into the database
         // Assuming you have a database connection $db
-        $response['success'] = true;
+
         // Example of an SQL statement (update it with actual table and column names)
         $query = "INSERT INTO company_info (company_name, address, registration_number, phone_number, email, logo_path) 
                   VALUES (?, ?, ?, ?, ?, ?)";
@@ -34,6 +43,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         if ($stmt->execute()) {
             $response['message'] = 'Company information and logo uploaded successfully.';
+            $response['success'] = true;
         } else {
             $response['success'] = false;
             $response['message'] = 'Database error: ' . $stmt->error;
