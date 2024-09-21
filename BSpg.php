@@ -5,6 +5,7 @@ if (
     $_SESSION['user_type'] == "Bookkeeper"
 ) {
     // Redirect to login page if not logged in
+    $_SESSION['message'] = "Access denied. Bookkeepers are not allowed to view the Balance Sheet page.";
     header("Location: Homepg.php");
     exit();
 }
@@ -190,6 +191,7 @@ $result = $conn->query($sql);
             </div>
         </div>
         <a href="view_company_info.php">General Settings</a>
+        <a href="Profilepg.php">Profile</a>
         <a href="logout.php">Logout</a>
     </div>
     <br>

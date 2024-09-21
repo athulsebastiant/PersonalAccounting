@@ -4,6 +4,7 @@ include "Connection.php";
 include "SessionPG.php";
 if ($_SESSION['user_type'] == "Auditor" || $_SESSION['user_type'] == "Bookkeeper") {
     // Redirect to login page if not logged in
+    $_SESSION['message'] = "Access denied. Auditors are not allowed to view the General Settings page.";
     header("Location: Homepg.php");
     exit();
 }
@@ -14,6 +15,7 @@ $checkResult = $conn->query($checkSql);
 
 if ($checkResult && $checkResult->fetch_assoc()['count'] == 0) {
     // No row exists, redirect to GeneralSettings.php
+
     header("Location: GeneralSettings.php");
     exit();
 }
@@ -118,6 +120,7 @@ if ($checkResult && $checkResult->fetch_assoc()['count'] == 0) {
             </div>
         </div>
         <a href="view_company_info.php">General Settings</a>
+        <a href="Profilepg.php">Profile</a>
         <a href="logout.php">Logout</a>
     </div>
 

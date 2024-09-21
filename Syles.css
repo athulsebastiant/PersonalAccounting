@@ -69,6 +69,6 @@ body {
     display: block;
 }
 
-.navbar a:last-child {
+.navbar a:nth-last-child(2) {
     margin-left: auto;
 }

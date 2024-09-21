@@ -159,6 +159,7 @@ $result = $conn->query($sql);
             </div>
         </div>
         <a href="view_company_info.php">General Settings</a>
+        <a href="Profilepg.php">Profile</a>
         <a href="logout.php">Logout</a>
     </div>
     <br>

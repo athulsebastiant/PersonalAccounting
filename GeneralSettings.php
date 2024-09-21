@@ -6,6 +6,7 @@ if (
     "Auditor" || $_SESSION['user_type'] == "Bookkeeper"
 ) {
     // Redirect to login page if not logged in
+    $_SESSION['message'] = "Access denied. Auditors and Bookkeepers are not allowed to view the General Settings page.";
     header("Location: Homepg.php");
     exit();
 }
@@ -92,6 +93,7 @@ if (
             </div>
         </div>
         <a href="view_company_info.php">General Settings</a>
+        <a href="Profilepg.php">Profile</a>
         <a href="logout.php">Logout</a>
     </div>
 

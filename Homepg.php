@@ -1,5 +1,13 @@
 <?php
 include "SessionPG.php";
+if (isset($_SESSION['message'])) {
+    echo '<div class="alert">
+            <span class="closebtn" onclick="this.parentElement.style.display=\'none\';">&times;</span>
+            ' . htmlspecialchars($_SESSION['message']) . '
+          </div>';
+    // Clear the message so it doesn't show again on refresh
+    unset($_SESSION['message']);
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -12,6 +20,31 @@ include "SessionPG.php";
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="Syles.css">
     <style>
+        .alert {
+            padding: 20px;
+            background-color: #f44336;
+            /* Red background */
+            color: white;
+            margin-bottom: 15px;
+            position: relative;
+            border-radius: 4px;
+        }
+
+        .closebtn {
+            color: white;
+            font-weight: bold;
+            float: right;
+            font-size: 22px;
+            line-height: 20px;
+            cursor: pointer;
+            transition: 0.3s;
+            margin-left: 15px;
+        }
+
+        .closebtn:hover {
+            color: #000;
+        }
+
         body {
             background-image: url('HomeImage.png');
             background-size: 100% 100%;
@@ -165,7 +198,20 @@ include "SessionPG.php";
             </a>
         </div>
     </div>
-
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            var closebtn = document.querySelector(".closebtn");
+            if (closebtn) { // Check if the close button exists
+                closebtn.addEventListener("click", function() {
+                    var div = this.parentElement;
+                    div.style.opacity = "0";
+                    setTimeout(function() {
+                        div.style.display = "none";
+                    }, 600);
+                });
+            }
+        });
+    </script>
 </body>
 
 </html>

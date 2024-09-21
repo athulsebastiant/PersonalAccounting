@@ -2,6 +2,7 @@
 session_start();
 if (!isset($_SESSION['username'])) {
     // Redirect to login page if not logged in
+    $_SESSION['message'] = "Access denied. Auditors are not allowed to view the add Journal page.";
     header("Location: loginpg2.php");
     exit();
 } ?>
@@ -149,6 +150,7 @@ if (!isset($_SESSION['username'])) {
             </div>
         </div>
         <a href="view_company_info.php">General Settings</a>
+        <a href="Profilepg.php">Profile</a>
         <a href="logout.php">Logout</a>
     </div>
     <br>
