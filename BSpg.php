@@ -170,6 +170,8 @@ $result = $conn->query($sql);
         }
     </style>
     <title>Balance Sheet</title>
+    <link rel="icon" type="image/x-icon" href="favicon.ico">
+    <title>Personal Accounting - Balance Sheet</title>
 </head>
 
 <body>

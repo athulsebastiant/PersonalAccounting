@@ -125,7 +125,8 @@ if (!isset($_SESSION['username'])) {
             box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.4);
         }
     </style>
-    <title>Journal Entry Details</title>
+    <link rel="icon" type="image/x-icon" href="favicon.ico">
+    <title>Personal Accounting - Add a Jrnl</title>
 </head>
 
 <?php //echo date("Y-m-d"); 

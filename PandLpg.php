@@ -158,7 +158,8 @@ $result = $conn->query($sql);
             cursor: pointer;
         }
     </style>
-    <title>Profit and Loss</title>
+    <link rel="icon" type="image/x-icon" href="favicon.ico">
+    <title>Personal Accounting - Profit and Loss</title>
 </head>
 
 <body>

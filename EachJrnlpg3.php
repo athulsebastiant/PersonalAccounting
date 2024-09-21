@@ -258,7 +258,8 @@ WHERE
             opacity: 1;
         }
     </style>
-    <title>Journal Entry Details</title>
+    <link rel="icon" type="image/x-icon" href="favicon.ico">
+    <title>Personal Accounting - Jrnl Entry</title>
 
 </head>
 

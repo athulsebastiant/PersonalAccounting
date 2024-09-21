@@ -92,7 +92,8 @@ $result = $conn->query($sql);
             margin-left: 5px;
         }
     </style>
-    <title>Database Table</title>
+    <link rel="icon" type="image/x-icon" href="favicon.ico">
+    <title>Personal Accounting - Jrnl Display</title>
 </head>
 
 <body>

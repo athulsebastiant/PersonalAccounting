@@ -36,7 +36,8 @@ $result = $conn->query($sql);
 <html>
 
 <head>
-    <title>Account Information</title>
+    <link rel="icon" type="image/x-icon" href="favicon.ico">
+    <title>Personal Accounting - Chart of Accounts</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="Syles.css">
     <style>

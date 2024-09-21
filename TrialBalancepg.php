@@ -139,7 +139,8 @@ $result = $conn->query($sql);
             cursor: pointer;
         }
     </style>
-    <title>Trial Balance</title>
+    <link rel="icon" type="image/x-icon" href="favicon.ico">
+    <title>Personal Accounting - Trial Balance</title>
 </head>
 
 <body>

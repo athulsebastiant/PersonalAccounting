@@ -4,8 +4,19 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/x-icon" href="favicon.ico">
     <title>Login</title>
     <style>
+        title {
+            display: flex;
+            align-items: center;
+        }
+
+        title img {
+            max-height: 20px;
+            margin-right: 5px;
+        }
+
         body {
             font-family: sans-serif;
         }
