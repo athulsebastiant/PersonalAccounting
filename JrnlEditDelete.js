@@ -76,6 +76,23 @@ document.addEventListener('DOMContentLoaded', function () {
         // Add a reset button
         const resetButton = document.createElement('button');
         resetButton.textContent = 'Reset Selection';
+        resetButton.style.cssText = `
+    padding: 8px 16px;
+    background-color: #f44336;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    margin-right: 10px;
+`;
+        resetButton.addEventListener('mouseover', function () {
+            this.style.backgroundColor = '#d32f2f';
+        });
+
+        resetButton.addEventListener('mouseout', function () {
+            this.style.backgroundColor = '#f44336';
+        });
         resetButton.addEventListener('click', resetSelection);
         table.parentNode.insertBefore(resetButton, table);
 

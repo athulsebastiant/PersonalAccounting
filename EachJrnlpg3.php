@@ -137,21 +137,83 @@ WHERE
         }
 
 
-        .filter-buttons {
-            margin-bottom: 15px;
-        }
-
-        .filter-buttons button {
-            margin-right: 10px;
-            padding: 8px 16px;
+        /* Common button styles */
+        .filter-buttons button,
+        .save-btn {
+            margin-left: 5px;
+            padding: 10px 16px;
             background-color: #4CAF50;
             color: #f9f9f9;
             border: none;
+            border-radius: 4px;
             cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
         }
 
-        .filter-buttons button:hover {
+        /* Filter buttons container */
+        .filter-buttons {
+            margin-bottom: 20px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        /* Filter buttons specific styles */
+        .filter-buttons button {
+            margin-right: 0;
+            /* Remove margin-right as we're using gap */
+        }
+
+        /* Save button specific styles */
+        .save-btn {
+            display: inline-block;
+            /* Changed from 'none' to make it visible by default */
+            margin-left: 5px;
+            margin-top: 5px;
+            padding: 8px 12px;
+            /* Slightly smaller padding */
+            font-size: 13px;
+            /* Slightly smaller font size */
+        }
+
+        /* Hover effects for all buttons */
+        .filter-buttons button:hover,
+        .save-btn:hover {
             background-color: #45a049;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.15);
+        }
+
+        /* Active effects for all buttons */
+        .filter-buttons button:active,
+        .save-btn:active {
+            transform: translateY(1px);
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Focus styles for accessibility */
+        .filter-buttons button:focus,
+        .save-btn:focus {
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.4);
+        }
+
+        /* Media query for smaller screens */
+        @media (max-width: 600px) {
+            .filter-buttons {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .filter-buttons button,
+            .save-btn {
+                width: 100%;
+                margin-right: 0;
+                margin-bottom: 10px;
+            }
         }
 
         .editable {
@@ -195,17 +257,6 @@ WHERE
             visibility: visible;
             opacity: 1;
         }
-
-        .save-btn {
-            display: none;
-            padding: 2px 5px;
-            background-color: #4CAF50;
-            color: white;
-            border: none;
-            cursor: pointer;
-            margin-left: 5px;
-            margin-top: 5px;
-        }
     </style>
     <title>Journal Entry Details</title>
 
@@ -213,7 +264,8 @@ WHERE
 
 <body>
     <div class="navbar">
-        <a href="Homepg.php">Dashboard</a>
+        <img src="logo-no-background.png" style="height: 34px; width:auto">
+        <a style="margin-left: 5px;" href="Homepg.php">Dashboard</a>
         <div class="dropdown">
             <button class="dropbtn">Reporting
                 <i class="fa fa-caret-down"></i>

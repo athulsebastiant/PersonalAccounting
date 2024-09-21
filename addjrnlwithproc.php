@@ -11,6 +11,8 @@ if (!isset($_SESSION['username'])) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="Syles.css">
     <style>
         .journal-container {
             max-width: 100%;
@@ -90,91 +92,37 @@ if (!isset($_SESSION['username'])) {
 
         .button-container {
             text-align: left;
-            /* Center the button horizontally */
+            margin: 20px 0;
         }
 
         .button-container button {
+            margin-left: 5px;
             background-color: #4CAF50;
-            /* Green color for the button */
             color: white;
-            /* White text color for the button */
             border: none;
-            /* Remove default border for the button */
-            padding: 10px 20px;
-            /* Add padding inside the button */
+            border-radius: 5px;
+            padding: 12px 24px;
             font-size: 16px;
-            /* Set font size for the button text */
+            font-weight: 500;
             cursor: pointer;
-            /* Indicate clickable behavior */
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
         }
 
-        .navbar {
-            background-color: #333;
-            overflow: hidden;
-            display: flex;
-            align-items: center;
-            font-family: Arial, sans-serif;
-            /* Set a consistent font */
+        .button-container button:hover {
+            background-color: #45a049;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
         }
 
-        .navbar a,
-        .navbar .dropbtn {
-            color: white;
-            text-align: center;
-            padding: 14px 20px;
-            /* Increased horizontal padding */
-            text-decoration: none;
-            font-size: 16px;
-            /* Consistent font size */
+        .button-container button:active {
+            transform: translateY(1px);
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
         }
 
-        .dropdown {
-            overflow: hidden;
-        }
-
-        .dropdown .dropbtn {
-            border: none;
+        .button-container button:focus {
             outline: none;
-            background-color: inherit;
-            margin: 0;
-            cursor: pointer;
-        }
-
-        .navbar a:hover,
-        .dropdown:hover .dropbtn {
-            background-color: #ddd;
-            color: black;
-        }
-
-        .dropdown-content {
-            display: none;
-            position: absolute;
-            background-color: #f9f9f9;
-            min-width: 160px;
-            box-shadow: 0px 8px 16px 0px rgba(0, 0, 0, 0.2);
-            z-index: 1;
-        }
-
-        .dropdown-content a {
-            float: none;
-            color: black;
-            padding: 12px 16px;
-            text-decoration: none;
-            display: block;
-            text-align: left;
-        }
-
-        .dropdown-content a:hover {
-            background-color: #ddd;
-        }
-
-        .dropdown:hover .dropdown-content {
-            display: block;
-        }
-
-        /* Push logout to the right */
-        .navbar a:last-child {
-            margin-left: auto;
+            box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.4);
         }
     </style>
     <title>Journal Entry Details</title>
@@ -185,7 +133,8 @@ if (!isset($_SESSION['username'])) {
 
 <body>
     <div class="navbar">
-        <a href="Homepg.php">Dashboard</a>
+        <img src="logo-no-background.png" style="height: 34px; width:auto">
+        <a style="margin-left: 5px;" href="Homepg.php">Dashboard</a>
         <div class="dropdown">
             <button class="dropbtn">Reporting
                 <i class="fa fa-caret-down"></i>
@@ -194,10 +143,11 @@ if (!isset($_SESSION['username'])) {
                 <a href="BSpg.php">Balance Sheet</a>
                 <a href="PandLpg.php">Profit and Loss</a>
                 <a href="TrialBalancepg.php">Trial Balance</a>
+                <a href="AccountStatement.php">Account Statement</a>
 
             </div>
         </div>
-
+        <a href="view_company_info.php">General Settings</a>
         <a href="logout.php">Logout</a>
     </div>
     <br>

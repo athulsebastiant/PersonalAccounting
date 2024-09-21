@@ -25,15 +25,16 @@ include "SessionPG.php";
             justify-content: center;
             align-items: center;
             height: calc(100vh - 50px);
-            gap: 20px;
-
-
+            gap: 30px;
+            /* Increased gap for better spacing */
         }
 
         .content-div {
-            width: 300px;
-            height: 300px;
-            padding: 20px;
+            width: 320px;
+            /* Slightly increased for a more balanced look */
+            height: 320px;
+            padding: 25px;
+            /* Added padding for a cleaner layout */
             border: 1px solid #ddd;
             box-sizing: border-box;
             display: flex;
@@ -41,9 +42,13 @@ include "SessionPG.php";
             justify-content: center;
             align-items: center;
             text-align: center;
-            background-color: #f0f0f0;
-            transition: background-color 0.3s ease;
             background-color: rgba(255, 255, 255, 0.92);
+            border-radius: 10px;
+            /* Added border-radius for softer edges */
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            /* Subtle shadow for depth */
+            transition: all 0.3s ease;
+
         }
 
         .content-div a {
@@ -57,14 +62,46 @@ include "SessionPG.php";
             height: 100%;
         }
 
+        .content-div h2,
+        .content-div p {
+
+            margin: 0;
+            padding: 5px 0;
+            /* Consistent spacing between elements */
+            font-weight: 600;
+            /* Consistent boldness */
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            /* Modern font */
+        }
+
         .content-div h2 {
+            height: 40px;
+            /* Ensures the same height for all h2 */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 24px;
+            /* Larger heading for prominence */
             color: #4CAF50;
+            text-shadow: 1px black;
+        }
+
+        .content-div p {
+            font-size: 16px;
+            color: #555;
+            /* Subtle color for body text */
         }
 
         .content-div:hover {
-            background-color: #e0e0e0;
+            background-color: rgba(240, 240, 240, 0.9);
+            /* Lighter hover effect while keeping transparency */
             cursor: pointer;
+            transform: scale(1.03);
+            /* Slight zoom effect on hover */
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+            /* Increased shadow on hover */
         }
+
 
         h1 {
             text-align: center;
@@ -77,7 +114,8 @@ include "SessionPG.php";
 <body>
 
     <div class="navbar">
-        <a href="Homepg.php">Dashboard</a>
+        <img src="logo-no-background.png" style="height: 34px; width:auto">
+        <a style="margin-left: 5px;" href="Homepg.php">Dashboard</a>
         <div class="dropdown">
             <button class="dropbtn">Reporting
                 <i class="fa fa-caret-down"></i>
@@ -90,11 +128,12 @@ include "SessionPG.php";
             </div>
         </div>
         <a href="view_company_info.php">General Settings</a>
+        <a href="Profilepg.php">Profile</a>
         <a href="logout.php">Logout</a>
     </div>
     <br>
 
-    <h1>Welcome, <?php echo htmlspecialchars($_SESSION['username']); ?>. You're the <?php echo htmlspecialchars($_SESSION['user_type']); ?>!</h1>
+    <h1>Welcome, <?php echo htmlspecialchars($_SESSION['username']); ?>. You're the <span style="color: gold;"><?php echo htmlspecialchars($_SESSION['user_type']); ?></span>!</h1>
     <br>
     <div class="content-container">
         <div class="content-div">
@@ -105,22 +144,22 @@ include "SessionPG.php";
         </div>
 
         <div class="content-div">
-            <a href="coadisplaypg2.php" id="getme">
-                <h2>Chart of Accounts</h2>
+            <a href="coadisplaypg2.php">
+                <h2 style="margin-top: 23px;">Chart of Accounts</h2>
                 <p>Click here to access Chart of Accounts</p>
             </a>
         </div>
 
         <div class="content-div">
             <a href="Entitydisplaypg.php">
-                <h2>Manage Account Entities</h2>
+                <h2 style="margin-top: 32px;">Manage Account Entities</h2>
                 <p>Click here to access Entities</p>
             </a>
         </div>
 
         <div class="content-div">
             <a href="UserControl.php">
-                <h2>Manage User Privileges</h2>
+                <h2 style="margin-top: 5px;">Manage User Privileges</h2>
                 <p>Click here to access User Privileges</p>
             </a>
         </div>

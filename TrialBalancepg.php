@@ -27,6 +27,29 @@ $result = $conn->query($sql);
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="Syles.css">
     <style>
+        button {
+            margin-left: 5px;
+            margin-right: 15px;
+            padding: 10px 20px;
+            background-color: #4CAF50;
+            color: #f9f9f9;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 500;
+            transition: background-color 0.3s ease, transform 0.1s ease;
+        }
+
+        button:hover {
+            background-color: #45a049;
+            transform: translateY(-2px);
+        }
+
+        button:active {
+            transform: translateY(1px);
+        }
+
         .company-info {
             text-align: center;
             margin-bottom: 20px;
@@ -121,7 +144,8 @@ $result = $conn->query($sql);
 
 <body>
     <div class="navbar">
-        <a href="Homepg.php">Dashboard</a>
+        <img src="logo-no-background.png" style="height: 34px; width:auto">
+        <a style="margin-left: 5px;" href="Homepg.php">Dashboard</a>
         <div class="dropdown">
             <button class="dropbtn">Reporting
                 <i class="fa fa-caret-down"></i>
@@ -139,14 +163,15 @@ $result = $conn->query($sql);
     <br>
     <div class="journal-container">
 
-        <form action="generate_trial_balance_pdf.php" method="post">
-            <button type="submit" class="pdf-button">Download PDF</button>
-        </form>
 
         <div class="journal-header">
             <h1>Trial Balance</h1>
             <div class="date"><?php echo date("Y-m-d"); ?></div>
         </div>
+        <form action="generate_trial_balance_pdf.php" method="post">
+            <button type="submit" class="pdf-button">Download PDF</button>
+        </form>
+
         <div class="company-info">
             <?php if ($company_info['logo_path']): ?>
                 <img src="<?php echo htmlspecialchars($company_info['logo_path']); ?>" alt="Company Logo">

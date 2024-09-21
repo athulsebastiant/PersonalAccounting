@@ -28,6 +28,7 @@ $result = $conn->query($sql);
         table {
             width: 100%;
             border-collapse: collapse;
+            margin-top: 12px;
         }
 
         tr:hover {
@@ -55,15 +56,74 @@ $result = $conn->query($sql);
         }
 
 
-
         .save-btn {
-            display: none;
             margin-left: 5px;
-            padding: 2px 5px;
+            padding: 10px 16px;
             background-color: #4CAF50;
-            color: white;
+            color: #f9f9f9;
             border: none;
+            border-radius: 4px;
             cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+
+
+        /* Save button specific styles */
+        .save-btn {
+            display: inline-block;
+            /* Changed from 'none' to make it visible by default */
+            margin-left: 5px;
+            margin-top: 5px;
+            padding: 8px 12px;
+            /* Slightly smaller padding */
+            font-size: 13px;
+            /* Slightly smaller font size */
+        }
+
+        /* Hover effects for all buttons */
+
+        .save-btn:hover {
+            background-color: #45a049;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.15);
+        }
+
+        /* Active effects for all buttons */
+
+        .save-btn:active {
+            transform: translateY(1px);
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Focus styles for accessibility */
+
+        .save-btn:focus {
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.4);
+        }
+
+        /* Media query for smaller screens */
+        @media (max-width: 600px) {
+
+
+
+            .save-btn {
+                width: 100%;
+                margin-right: 0;
+                margin-bottom: 10px;
+            }
+        }
+
+        span {
+            font-size: 24px;
+            font-weight: 600;
+            color: #333;
+            margin-left: 5px;
+
         }
     </style>
 </head>
@@ -71,7 +131,8 @@ $result = $conn->query($sql);
 <body>
 
     <div class="navbar">
-        <a href="Homepg.php">Dashboard</a>
+        <img src="logo-no-background.png" style="height: 34px; width:auto">
+        <a style="margin-left: 5px;" href="Homepg.php">Dashboard</a>
         <div class="dropdown">
             <button class="dropbtn">Reporting
                 <i class="fa fa-caret-down"></i>

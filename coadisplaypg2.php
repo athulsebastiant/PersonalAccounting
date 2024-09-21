@@ -69,28 +69,85 @@ $result = $conn->query($sql);
             background-color: #f9f9f9;
         }
 
-        .filter-buttons {
-            margin-bottom: 15px;
-        }
-
         .filter-buttons button {
-            margin-right: 10px;
-            padding: 8px 16px;
+            margin-left: 5px;
+            padding: 10px 16px;
             background-color: #4CAF50;
             color: #f9f9f9;
             border: none;
+            border-radius: 4px;
             cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
         }
 
+        /* Filter buttons container */
+        .filter-buttons {
+            margin-bottom: 20px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        /* Filter buttons specific styles */
+        .filter-buttons button {
+            margin-right: 0;
+            /* Remove margin-right as we're using gap */
+        }
+
+
+        /* Hover effects for all buttons */
         .filter-buttons button:hover {
             background-color: #45a049;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.15);
+        }
+
+        /* Active effects for all buttons */
+        .filter-buttons button:active {
+            transform: translateY(1px);
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Focus styles for accessibility */
+        .filter-buttons button:focus {
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.4);
+        }
+
+        /* Media query for smaller screens */
+        @media (max-width: 600px) {
+            .filter-buttons {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .filter-buttons button {
+                width: 100%;
+                margin-right: 0;
+                margin-bottom: 10px;
+            }
+        }
+
+        .section-heading {
+            font-size: 24px;
+            font-weight: 600;
+            color: #333;
+            margin: 20px 0;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #4CAF50;
+            display: inline-block;
+            font-family: Arial, sans-serif;
         }
     </style>
 </head>
 
 <body>
     <div class="navbar">
-        <a href="Homepg.php">Dashboard</a>
+        <img src="logo-no-background.png" style="height: 34px; width:auto">
+        <a style="margin-left: 5px;" href="Homepg.php">Dashboard</a>
         <div class="dropdown">
             <button class="dropbtn">Reporting
                 <i class="fa fa-caret-down"></i>
@@ -266,7 +323,7 @@ $result = $conn->query($sql);
             }
         }
     </script>
-    <span style="font-size: 20px;">Chart Of Accounts</span>
+    <span class="section-heading">Chart Of Accounts</span>
     <div class="filter-buttons">
 
         <?php

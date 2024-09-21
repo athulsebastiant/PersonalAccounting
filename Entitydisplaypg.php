@@ -69,20 +69,39 @@ $result = $conn->query($sql);
 
 
         .filter-buttons {
-            margin-bottom: 15px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
         }
 
         .filter-buttons button {
-            margin-right: 10px;
-            padding: 8px 16px;
+            margin-left: 5px;
+            margin-right: 15px;
+            padding: 10px 20px;
             background-color: #4CAF50;
             color: #f9f9f9;
             border: none;
+            border-radius: 5px;
             cursor: pointer;
+            font-size: 16px;
+            font-weight: 500;
+            transition: background-color 0.3s ease, transform 0.1s ease;
         }
 
         .filter-buttons button:hover {
             background-color: #45a049;
+            transform: translateY(-2px);
+        }
+
+        .filter-buttons button:active {
+            transform: translateY(1px);
+        }
+
+        .filter-buttons span {
+            font-size: 24px;
+            font-weight: 600;
+            color: #333;
+            margin-left: 5px;
         }
 
 
@@ -357,7 +376,8 @@ $result = $conn->query($sql);
 
 <body>
     <div class="navbar">
-        <a href="Homepg.php">Dashboard</a>
+        <img src="logo-no-background.png" style="height: 34px; width:auto">
+        <a style="margin-left: 5px;" href="Homepg.php">Dashboard</a>
         <div class="dropdown">
             <button class="dropbtn">Reporting
                 <i class="fa fa-caret-down"></i>
