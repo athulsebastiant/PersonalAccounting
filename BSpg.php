@@ -14,6 +14,16 @@ $company_info_sql = "SELECT company_name, address, registration_number, phone_nu
 $company_info_result = $conn->query($company_info_sql);
 $company_info = $company_info_result->fetch_assoc();
 // Call the stored procedure
+$sql1 = "SELECT DATE(MIN(createdDateTime)) AS earliest_timestamp FROM jrlmaster";
+$result = $conn->query($sql1);
+
+if ($result->num_rows > 0) {
+    // Fetch the result
+    $row = $result->fetch_assoc();
+    $earliestTimestamp = $row['earliest_timestamp'];
+} else {
+    $earliestTimestamp = "As of";
+}
 $sql = "CALL BSOMG()";
 $result = $conn->query($sql);
 
@@ -200,7 +210,7 @@ $result = $conn->query($sql);
 
         <div class="journal-header">
             <h1>Balance Sheet</h1>
-            <div class="date"><?php echo date("Y-m-d"); ?></div>
+            <div class="date"><?php echo $earliestTimestamp . " - " . date("Y-m-d"); ?></div>
         </div>
         <form action="generate_balance_sheet_pdf.php" method="post">
             <button type="submit" class="pdf-button">Download PDF</button>
@@ -222,10 +232,10 @@ $result = $conn->query($sql);
                 <tr>
                     <th>AccountID</th>
                     <th>Account Name</th>
-                    <th>Debit</th>
+                    <th>Debit(.₹)</th>
                     <th>Account ID</th>
                     <th>Account name</th>
-                    <th>Credit</th>
+                    <th>Credit(.₹)</th>
                 </tr>
             </thead>
             <tbody>

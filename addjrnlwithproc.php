@@ -171,8 +171,8 @@ if (!isset($_SESSION['username'])) {
                     <th>Account</th>
                     <th>Entity</th>
                     <th>Label</th>
-                    <th>Debit</th>
-                    <th>Credit</th>
+                    <th>Debit(.₹)</th>
+                    <th>Credit(.₹)</th>
                 </tr>
             </thead>
             <tbody>

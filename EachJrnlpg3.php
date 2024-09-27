@@ -311,8 +311,8 @@ WHERE
                     <th>Account</th>
                     <th>Entity</th>
                     <th>Label</th>
-                    <th>Debit</th>
-                    <th>Credit</th>
+                    <th>Debit(.₹)</th>
+                    <th>Credit(.₹)</th>
                     <th>Created By</th>
                     <th>Created Date Time</th>
                     <th>Modified By</th>
