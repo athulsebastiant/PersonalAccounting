@@ -1,7 +1,7 @@
 <?php
 include "Connection.php";
 
-$sql = "SELECT CategoryID, SubcategoryID, SubcategoryName FROM accountsub";
+$sql = "SELECT CategoryID, SubcategoryID, SubcategoryName FROM accountsub order by CategoryID, SubcategoryID";
 $result = $conn->query($sql);
 
 $subcategories = [];

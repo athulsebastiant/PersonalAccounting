@@ -143,6 +143,47 @@ $result = $conn->query($sql);
             display: inline-block;
             font-family: Arial, sans-serif;
         }
+
+        .tooltip-container {
+            position: relative;
+            display: inline-block;
+        }
+
+        .tooltiptext {
+            visibility: hidden;
+            width: 300px;
+            background-color: rgba(0, 0, 0, 0.8);
+            color: #fff;
+            text-align: left;
+            border-radius: 6px;
+            padding: 10px;
+            position: absolute;
+            z-index: 1;
+            top: -140%;
+            /* Position it above the input */
+            left: 50%;
+            transform: translateX(-50%);
+            opacity: 0;
+            transition: opacity 0.3s ease, visibility 0.3s ease;
+            font-size: 14px;
+            line-height: 1.4;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+            pointer-events: none;
+            /* Prevent interfering with input field */
+        }
+
+        /* Tooltip arrow */
+        .tooltiptext::after {
+            content: "";
+            position: absolute;
+            bottom: -10px;
+            /* Position below the tooltip */
+            left: 50%;
+            transform: translateX(-50%);
+            border-width: 8px;
+            border-style: solid;
+            border-color: rgba(0, 0, 0, 0.8) transparent transparent transparent;
+        }
     </style>
 </head>
 
@@ -247,16 +288,41 @@ $result = $conn->query($sql);
             var newRow = document.createElement("tr");
             newRow.className = "new-row";
             newRow.innerHTML = `
-                <td><input type="text" name="AccountNo" placeholder="Enter Account No."></td>
-                <td><input type="text" name="AccountName" placeholder="Enter Account Name"></td>
+              <td> <input type="text" name="AccountNo" placeholder="Enter Account No." onfocus="showGuideline(this)" onblur="hideGuideline(this); validateAccountNo(this)" id="accountNoInput">
+    <div class="tooltip-container">
+        <span class="tooltiptext" id="accountNoGuideline">
+            Account Number Guideline:
+            <br> 1xxxxx: Asset accounts
+            <br> 2xxxxx: Liability accounts
+            <br> 3xxxxx: Capital accounts
+            <br> 4xxxxx: Income accounts
+            <br> 5xxxxx: Expense accounts
+            <br> Please select an appropriate prefix based on the account type.
+        </span>
+    </div>
+</td>
+        <td><input type="text" name="AccountName" placeholder="Enter Account Name"></td>
                 <td><select name="SubcategoryName" id="subcategoryDropdown">
                     <option value="">Select Subcategory</option>
                 </select></td>
+                <td colspan="4"><span class="error-message"></span></td>
             `;
 
             table.insertBefore(newRow, table.firstChild);
             fetchSubcategories();
             document.getElementById("saveButton").style.display = "inline-block";
+        }
+
+        function showGuideline(input) {
+            var guideline = document.getElementById('accountNoGuideline');
+            guideline.style.visibility = 'visible';
+            guideline.style.opacity = '1';
+        }
+
+        function hideGuideline(input) {
+            var guideline = document.getElementById('accountNoGuideline');
+            guideline.style.visibility = 'hidden';
+            guideline.style.opacity = '0';
         }
 
         function fetchSubcategories() {
@@ -266,8 +332,33 @@ $result = $conn->query($sql);
                 if (xhr.readyState == 4 && xhr.status == 200) {
                     var subcategories = JSON.parse(xhr.responseText);
                     var dropdown = document.getElementById("subcategoryDropdown");
-
+                    var currentCategory = null;
                     subcategories.forEach(function(subcategory) {
+                        // Add non-clickable headers before each new category
+                        if (subcategory.CategoryID != currentCategory) {
+                            currentCategory = subcategory.CategoryID;
+
+                            var nonClickableOption = document.createElement("option");
+                            nonClickableOption.disabled = true;
+                            nonClickableOption.style.fontWeight = "bold"; // Optional: Bold the category title
+                            nonClickableOption.style.backgroundColor = "#f0f0f0"; // Optional: Gray background
+
+                            if (currentCategory == 1) {
+                                nonClickableOption.text = "Assets";
+                            } else if (currentCategory == 2) {
+                                nonClickableOption.text = "Liabilities";
+                            } else if (currentCategory == 3) {
+                                nonClickableOption.text = "Capital";
+                            } else if (currentCategory == 4) {
+                                nonClickableOption.text = "Income";
+                            } else if (currentCategory == 5) {
+                                nonClickableOption.text = "Expenses";
+                            }
+
+                            dropdown.add(nonClickableOption);
+                        }
+
+                        // Add clickable subcategory option
                         var option = document.createElement("option");
                         option.value = subcategory.CategoryID + "," + subcategory.SubcategoryID;
                         option.text = subcategory.SubcategoryName;
@@ -282,7 +373,7 @@ $result = $conn->query($sql);
 
             var rows = document.querySelectorAll("table tbody tr.new-row");
             var newRows = [];
-
+            var hasErrors = false;
             rows.forEach(function(row) {
                 var accountNo = row.querySelector("input[name='AccountNo']").value;
                 var accountName = row.querySelector("input[name='AccountName']").value;
@@ -296,8 +387,15 @@ $result = $conn->query($sql);
                         CategoryID: categoryID,
                         SubcategoryID: subcategoryID
                     });
+                } else {
+                    hasErrors = true;
                 }
             });
+
+            if (hasErrors) {
+                alert("Please correct all errors before saving.");
+                return;
+            }
 
             if (newRows.length > 0) {
                 fetch('insert_account.php', {
@@ -324,6 +422,42 @@ $result = $conn->query($sql);
             } else {
                 alert("Please fill in all fields.");
             }
+        }
+
+
+        function validateAccountNo(input) {
+            const accountNo = parseInt(input.value);
+            const errorSpan = input.closest('tr').querySelector('.error-message');
+
+            if (isNaN(accountNo) || accountNo < 10000 || accountNo > 60000) {
+                showError(input, errorSpan, 'Account No. must be between 10000 and 60000.');
+                return;
+            }
+
+            // Check if account number already exists
+            fetch('CheckAccountNo.php?AccountNo=' + accountNo)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.exists) {
+                        showError(input, errorSpan, 'Account No. is already used.');
+                    } else {
+                        clearError(input, errorSpan);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                });
+        }
+
+        function showError(input, errorSpan, message) {
+            input.style.border = '2px solid red';
+            errorSpan.textContent = message;
+            errorSpan.style.color = 'red';
+        }
+
+        function clearError(input, errorSpan) {
+            input.style.border = '';
+            errorSpan.textContent = '';
         }
     </script>
     <span class="section-heading">Chart Of Accounts</span>
