@@ -32,7 +32,7 @@ file_put_contents('debug.log', print_r($data, true));
 // Prepare the SQL update statement
 $updateSql = "UPDATE jrldetailed 
               SET AccountID = ?, 
-                  EntityID = ?, 
+                  
                   description = ?, 
                   DebitAmount = ?, 
                   CreditAmount = ?, 
@@ -61,12 +61,11 @@ try {
 
     // Loop through the updateArray and execute the update for each row
     foreach ($updateArray as $row) {
-        $entityID = ($row['entity'] === '' || $row['entity'] === 'null' || $row['entity'] === null) ? null : (int)$row['entity'];
 
         $updateStmt->bind_param(
-            "iisddii",  // Data types: i for int, s for string, d for double
+            "isddii",  // Data types: i for int, s for string, d for double
             $row['account'],         // AccountID
-            $entityID,               // EntityID
+            // EntityID
             $row['label'],           // description
             $row['debit'],           // DebitAmount
             $row['credit'],          // CreditAmount

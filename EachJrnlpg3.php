@@ -25,12 +25,12 @@ if (isset($_GET['EntryID'])) {
 SELECT 
     jd.LineID,
     jd.AccountID,
-    jd.EntityID,
+    
     coa.AccountName,
     jd.description,
     jd.DebitAmount,
     jd.CreditAmount,
-    e.name AS EntityName,
+    
     jd.createdBy,
     jd.createdDateTime,
     jd.modifiedBy,
@@ -39,8 +39,7 @@ FROM
     jrldetailed jd
 JOIN 
     coa ON jd.AccountID = coa.AccountNo
-LEFT JOIN 
-    entity e ON jd.EntityID = e.EntityID
+
 WHERE 
     jd.EntryID = ?";
     $stmt_detail = $conn->prepare($sql_detail);
@@ -309,7 +308,7 @@ WHERE
                 <tr>
                     <th>Line Id</th>
                     <th>Account</th>
-                    <th>Entity</th>
+
                     <th>Label</th>
                     <th>Debit(.₹)</th>
                     <th>Credit(.₹)</th>
@@ -329,7 +328,7 @@ WHERE
                     echo "<tr>
                     <td>" . htmlspecialchars($row['LineID'])  . "</td>    
                     <td>" . htmlspecialchars($row['AccountID']) . " - " . htmlspecialchars($row['AccountName']) . "</td>
-                        <td>" . htmlspecialchars($row['EntityID']) . " - " . htmlspecialchars($row['EntityName']) . "</td>
+                        
                         <td>" . htmlspecialchars($row['description']) . "</td>
                         <td>" . htmlspecialchars($row['DebitAmount']) . "</td>
                         <td>" . htmlspecialchars($row['CreditAmount']) . "</td>
@@ -370,11 +369,6 @@ WHERE
                         cell.addEventListener('click', function() {
                             showDropdown(this);
                         });
-                    } else if (colIndex === 2) {
-                        // For Entity column, add click listener to show dropdown
-                        cell.addEventListener('click', function() {
-                            showDropdownEnt(this);
-                        });
                     } else {
                         cell.setAttribute('contenteditable', 'true');
                     }
@@ -390,15 +384,15 @@ WHERE
                 cell.removeAttribute('contenteditable');
                 cell.classList.remove('editable');
                 // Remove click listeners from Account and Entity cells
-                if (cell.cellIndex === 1 || cell.cellIndex === 2) {
+                if (cell.cellIndex === 1) {
                     cell.removeEventListener('click', function() {
                         if (cell.cellIndex === 1) showDropdown(this);
-                        else showDropdownEnt(this);
+
                     });
                 }
             });
             // Remove any open dropdowns
-            document.querySelectorAll('.account-dropdown, .entity-dropdown').forEach(dropdown => dropdown.remove());
+            document.querySelectorAll('.account-dropdown').forEach(dropdown => dropdown.remove());
         }
 
         // Function to show account dropdown
@@ -470,77 +464,77 @@ WHERE
         }
 
         // Function to show entity dropdown
-        function showDropdownEnt(element) {
-            // Only proceed if this is the second column
-            if (element.cellIndex !== 2) return;
-            if (element.querySelector('.entity-dropdown')) return;
+        /* function showDropdownEnt(element) {
+             // Only proceed if this is the second column
+             if (element.cellIndex !== 2) return;
+             if (element.querySelector('.entity-dropdown')) return;
 
-            // Create a dropdown element
-            const dropdown = document.createElement('select');
-            dropdown.className = 'entity-dropdown';
+             // Create a dropdown element
+             const dropdown = document.createElement('select');
+             dropdown.className = 'entity-dropdown';
 
-            // Add a loading option
-            dropdown.innerHTML = '<option>Loading...</option>';
+             // Add a loading option
+             dropdown.innerHTML = '<option>Loading...</option>';
 
-            // Insert the dropdown into the cell
-            const originalContent = element.innerHTML;
-            element.innerHTML = '';
-            element.appendChild(dropdown);
+             // Insert the dropdown into the cell
+             const originalContent = element.innerHTML;
+             element.innerHTML = '';
+             element.appendChild(dropdown);
 
-            // Fetch data from PHP using AJAX
-            fetch('get_entities.php')
-                .then(response => response.text())
-                .then(text => {
-                    try {
-                        const data = JSON.parse(text);
+             // Fetch data from PHP using AJAX
+             fetch('get_entities.php')
+                 .then(response => response.text())
+                 .then(text => {
+                     try {
+                         const data = JSON.parse(text);
 
-                        // Clear the dropdown
-                        dropdown.innerHTML = '';
+                         // Clear the dropdown
+                         dropdown.innerHTML = '';
 
-                        // Add a default option
-                        const defaultOption = document.createElement('option');
-                        defaultOption.text = 'Select an entity';
-                        defaultOption.value = '';
-                        dropdown.add(defaultOption);
+                         // Add a default option
+                         const defaultOption = document.createElement('option');
+                         defaultOption.text = 'Select an entity';
+                         defaultOption.value = '';
+                         dropdown.add(defaultOption);
 
-                        const nullOption = document.createElement('option');
-                        nullOption.text = '-';
-                        nullOption.value = null;
-                        dropdown.add(nullOption);
+                         const nullOption = document.createElement('option');
+                         nullOption.text = '-';
+                         nullOption.value = null;
+                         dropdown.add(nullOption);
 
-                        // Add options from the fetched data
-                        data.forEach(entity => {
-                            const option = document.createElement('option');
-                            option.text = entity.name;
-                            option.value = entity.Eid;
-                            dropdown.add(option);
-                        });
-                    } catch (e) {
-                        console.error('Error parsing JSON:', e);
-                        throw new Error('Invalid JSON response');
-                    }
-                })
-                .catch(error => {
-                    console.error('Error fetching entities:', error);
-                    element.innerHTML = 'Error loading entities';
-                });
+                         // Add options from the fetched data
+                         data.forEach(entity => {
+                             const option = document.createElement('option');
+                             option.text = entity.name;
+                             option.value = entity.Eid;
+                             dropdown.add(option);
+                         });
+                     } catch (e) {
+                         console.error('Error parsing JSON:', e);
+                         throw new Error('Invalid JSON response');
+                     }
+                 })
+                 .catch(error => {
+                     console.error('Error fetching entities:', error);
+                     element.innerHTML = 'Error loading entities';
+                 });
 
-            // Handle selection
-            dropdown.addEventListener('change', function() {
-                element.innerHTML = this.options[this.selectedIndex].text;
-                element.dataset.EntityId = this.value;
-            });
+             // Handle selection
+             dropdown.addEventListener('change', function() {
+                 element.innerHTML = this.options[this.selectedIndex].text;
+                 element.dataset.EntityId = this.value;
+             });
 
-            // Handle click outside
-            document.addEventListener('click', function closeDropdown(e) {
-                if (!element.contains(e.target)) {
-                    if (dropdown.value === '') {
-                        element.innerHTML = originalContent;
-                    }
-                    document.removeEventListener('click', closeDropdown);
-                }
-            });
-        }
+             // Handle click outside
+             document.addEventListener('click', function closeDropdown(e) {
+                 if (!element.contains(e.target)) {
+                     if (dropdown.value === '') {
+                         element.innerHTML = originalContent;
+                     }
+                     document.removeEventListener('click', closeDropdown);
+                 }
+             });
+         }*/
 
         // Toggle edit mode
 
@@ -588,7 +582,7 @@ WHERE
                     entryID: entryID,
                     lineId: row.cells[0].textContent.trim(),
                     account: row.cells[1].textContent.trim().split(' - ')[0],
-                    entity: row.cells[2].textContent.trim().split(' - ')[0] === '-' ? null : row.cells[2].textContent.trim().split(' - ')[0],
+                    //entity: row.cells[2].textContent.trim().split(' - ')[0] === '-' ? null : row.cells[2].textContent.trim().split(' - ')[0],
                     label: label,
                     debit: debit,
                     credit: credit
@@ -658,7 +652,7 @@ WHERE
         outline: 2px solid #007bff;
         background-color: #ffffff;
     }
-    .account-dropdown, .entity-dropdown {
+    .account-dropdown{
         width: 100%;
         padding: 2px;
     }

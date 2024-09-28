@@ -169,7 +169,7 @@ if (!isset($_SESSION['username'])) {
             <thead>
                 <tr>
                     <th>Account</th>
-                    <th>Entity</th>
+
                     <th>Label</th>
                     <th>Debit(.₹)</th>
                     <th>Credit(.₹)</th>
@@ -205,7 +205,7 @@ if (!isset($_SESSION['username'])) {
             // Split the cell into four editable cells
             currentRow.innerHTML = `
         <td contenteditable="true" class="editable account"></td>
-        <td contenteditable="true" class="editable entity"></td>
+        
         <td contenteditable="true" class="editable label"></td>
         <td contenteditable="true" class="editable debit"></td>
         <td contenteditable="true" class="editable credit"></td>
@@ -217,9 +217,7 @@ if (!isset($_SESSION['username'])) {
                 showDropdown(this);
             });
 
-            currentRow.cells[1].addEventListener('click', function() {
-                showDropdownEnt(this);
-            });
+
 
 
             // Add event listener to the first cell of the current row
@@ -374,7 +372,7 @@ if (!isset($_SESSION['username'])) {
             });
         }
 
-        function showDropdownEnt(element) {
+        /* function showDropdownEnt(element) {
             // Only proceed if this is the first column
             if (element.cellIndex !== 1) return;
             if (element.querySelector('.entity-dropdown')) return;
@@ -433,7 +431,7 @@ if (!isset($_SESSION['username'])) {
                 element.dataset.EntityId = this.value;
             });
         }
-
+*/
 
 
 
@@ -449,7 +447,7 @@ if (!isset($_SESSION['username'])) {
             let totalCredit = 0;
             rows.forEach(row => {
                 const account = row.querySelector('.account') ? row.querySelector('.account').dataset.accountId : '';
-                const entity = row.querySelector('.entity') ? row.querySelector('.entity').dataset.EntityId : null;
+                //const entity = row.querySelector('.entity') ? row.querySelector('.entity').dataset.EntityId : null;
                 const label = row.querySelector('.label') ? row.querySelector('.label').textContent.trim() : '';
                 const debit = row.querySelector('.debit') ? parseFloat(row.querySelector('.debit').textContent.trim()) : 0.0;
                 const credit = row.querySelector('.credit') ? parseFloat(row.querySelector('.credit').textContent.trim()) : 0.0;
@@ -458,7 +456,7 @@ if (!isset($_SESSION['username'])) {
                 if (account && label && (debit || credit)) {
                     entries.push({
                         account,
-                        entity,
+
                         label,
                         debit,
                         credit

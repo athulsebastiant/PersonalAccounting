@@ -10,7 +10,7 @@ $username = $_SESSION['username'];
 // Prepare the SQL statement
 $sql = "UPDATE jrldetailed 
         SET AccountID = ?, 
-            EntityID = ?, 
+             
             description = ?, 
             DebitAmount = ?, 
             CreditAmount = ?,
@@ -32,13 +32,13 @@ try {
     // Loop through the received data and update the jrldetailed table
     foreach ($data as $row) {
         // Handle potential null values for the EntityID
-        $entityID = ($row['entity'] === '' || $row['entity'] === 'null' || $row['entity'] === null) ? null : (int)$row['entity'];
+
 
         // Bind parameters
         $stmt->bind_param(
-            "iisddii",
+            "isddii",
             $row['account'],  // AccountID
-            $entityID,        // EntityID
+            // EntityID
             $row['label'],    // description
             $row['debit'],    // DebitAmount
             $row['credit'],   // CreditAmount

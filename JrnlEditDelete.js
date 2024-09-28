@@ -156,8 +156,8 @@ document.addEventListener('DOMContentLoaded', function () {
                 // Extract data from row cells
                 const lineIDCell = row.querySelector('td:nth-child(1)');
                 const accountCell = row.querySelector('td:nth-child(2)');
-                const entityCell = row.querySelector('td:nth-child(3)');
-                const labelCell = row.querySelector('td:nth-child(4)');
+                //const entityCell = row.querySelector('td:nth-child(3)');
+                const labelCell = row.querySelector('td:nth-child(3)');
                 const debitCell = row.querySelector('.debit');
                 const creditCell = row.querySelector('.credit');
 
@@ -180,8 +180,8 @@ document.addEventListener('DOMContentLoaded', function () {
                 const accountParts = accountCell.textContent.trim().split(" - ");
                 const account = accountParts.length > 0 ? parseInt(accountParts[0].trim(), 10) : null;
 
-                const entityText = entityCell ? entityCell.textContent.trim() : "";
-                const entity = entityText && entityText !== "-" ? parseInt(entityText.split(" - ")[0].trim(), 10) : null;
+                /*const entityText = entityCell ? entityCell.textContent.trim() : "";
+                const entity = entityText && entityText !== "-" ? parseInt(entityText.split(" - ")[0].trim(), 10) : null;*/
 
                 const label = labelCell.textContent.trim();
                 const debitValue = debitCell ? parseFloat(debitCell.textContent.trim()) : 0.0;
@@ -190,7 +190,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 const rowData = {
                     lineID: lineID,
                     account: account,
-                    entity: entity,
+                    //entity: entity,
                     label: label,
                     debit: debitValue,
                     credit: creditValue
@@ -276,22 +276,18 @@ document.addEventListener('DOMContentLoaded', function () {
         const rows = table.querySelectorAll('tbody tr');
         rows.forEach(row => {
             row.querySelectorAll('td').forEach((cell, index) => {
-                if (index < 6 && index >= 1) { // Only make the first 6 columns editable
+                if (index < 5 && index >= 1) { // Only make the first 6 columns editable
                     cell.contentEditable = true;
 
-                    if (index === 4) { // Debit column
+                    if (index === 3) { // Debit column
                         cell.classList.add('debit');
-                    } else if (index === 5) { // Credit column
+                    } else if (index === 4) { // Credit column
                         cell.classList.add('credit');
                     }
 
                     if (index === 1) { // Account column
                         cell.addEventListener('click', function () {
                             showDropdown(this);
-                        });
-                    } else if (index === 2) { // Entity column
-                        cell.addEventListener('click', function () {
-                            showDropdownEnt(this);
                         });
                     }
                 }
@@ -403,7 +399,7 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
-    function showDropdownEnt(element) {
+    /*function showDropdownEnt(element) {
         // Only proceed if this is the first column
         if (element.cellIndex !== 2) return;
         if (element.querySelector('.entity-dropdown')) return;
@@ -462,7 +458,7 @@ document.addEventListener('DOMContentLoaded', function () {
             element.dataset.EntityId = this.value;
         });
     }
-
+*/
     function disableEditing() {
         const table = document.querySelector('.journal-container table');
         if (!table) {
@@ -472,7 +468,7 @@ document.addEventListener('DOMContentLoaded', function () {
         const rows = table.querySelectorAll('tbody tr');
         rows.forEach(row => {
             row.querySelectorAll('td').forEach((cell, index) => {
-                if (index < 6 && index >= 1) {
+                if (index < 5 && index >= 1) {
                     cell.contentEditable = false; // Disable editing
                 }
             });
@@ -490,7 +486,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
         rows.forEach((row, index) => {
             const account = row.querySelector('td:nth-child(2)');
-            const label = row.querySelector('td:nth-child(4)');
+            const label = row.querySelector('td:nth-child(3)');
             const debit = row.querySelector('.debit');
             const credit = row.querySelector('.credit');
 

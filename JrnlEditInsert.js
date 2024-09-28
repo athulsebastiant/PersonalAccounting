@@ -78,8 +78,8 @@ document.addEventListener('DOMContentLoaded', function () {
                 // Extract data from the row cells
                 const lineIDCell = row.querySelector('td:nth-child(1)');
                 const accountCell = row.querySelector('td:nth-child(2)');
-                const entityCell = row.querySelector('td:nth-child(3)');
-                const labelCell = row.querySelector('td:nth-child(4)');
+                //const entityCell = row.querySelector('td:nth-child(3)');
+                const labelCell = row.querySelector('td:nth-child(3)');
                 const debitCell = row.querySelector('.debit');
                 const creditCell = row.querySelector('.credit');
 
@@ -92,8 +92,8 @@ document.addEventListener('DOMContentLoaded', function () {
                 const accountParts = accountCell.textContent.trim().split(" - ");
                 const account = accountParts.length > 0 ? parseInt(accountParts[0].trim(), 10) : null;
 
-                const entityText = entityCell ? entityCell.textContent.trim() : "";
-                const entity = entityText && entityText !== "-" ? parseInt(entityText.split(" - ")[0].trim(), 10) : null;
+                //const entityText = entityCell ? entityCell.textContent.trim() : "";
+                //const entity = entityText && entityText !== "-" ? parseInt(entityText.split(" - ")[0].trim(), 10) : null;
 
                 const label = labelCell.textContent.trim();
                 const debitValue = debitCell ? parseFloat(debitCell.textContent.trim()) : 0.0;
@@ -102,7 +102,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 const rowData = {
                     lineID: lineID,
                     account: account,
-                    entity: entity,
+                    //entity: entity,
                     label: label,
                     debit: debitValue,
                     credit: creditValue
@@ -261,22 +261,18 @@ console.log('Rows to update:', updateArray);
         const rows = table.querySelectorAll('tbody tr');
         rows.forEach(row => {
             row.querySelectorAll('td').forEach((cell, index) => {
-                if (index < 6 && index >= 1) { // Only make the first 6 columns editable
+                if (index < 5 && index >= 1) { // Only make the first 6 columns editable
                     cell.contentEditable = true;
 
-                    if (index === 4) { // Debit column
+                    if (index === 3) { // Debit column
                         cell.classList.add('debit');
-                    } else if (index === 5) { // Credit column
+                    } else if (index === 4) { // Credit column
                         cell.classList.add('credit');
                     }
 
                     if (index === 1) { // Account column
                         cell.addEventListener('click', function () {
                             showDropdown(this);
-                        });
-                    } else if (index === 2) { // Entity column
-                        cell.addEventListener('click', function () {
-                            showDropdownEnt(this);
                         });
                     }
                 }
@@ -312,19 +308,19 @@ console.log('Rows to update:', updateArray);
 
 
 
-        for (let i = 0; i < 10; i++) { // Create 10 cells to match your table structure
+        for (let i = 0; i < 9; i++) { // Create 10 cells to match your table structure
             const cell = newRow.insertCell();
             cell.classList.add('toInsert');
             if (i === 0) {
                 // Set the value of the first column to the new incremented value
                 cell.textContent = newLineID;
             }
-            if ((i < 6) && (i >= 1)) { // Make only the first 6 cells editable
+            if ((i < 5) && (i >= 1)) { // Make only the first 6 cells editable
                 cell.contentEditable = true;
 
-                if (i === 4) { // Debit column
+                if (i === 3) { // Debit column
                     cell.classList.add('debit');
-                } else if (i === 5) { // Credit column
+                } else if (i === 4) { // Credit column
                     cell.classList.add('credit');
                 }
 
@@ -333,10 +329,6 @@ console.log('Rows to update:', updateArray);
                 if (i === 1) { // Account column
                     cell.addEventListener('click', function () {
                         showDropdown(this);
-                    });
-                } else if (i === 2) { // Entity column
-                    cell.addEventListener('click', function () {
-                        showDropdownEnt(this);
                     });
                 }
             }
@@ -425,12 +417,7 @@ console.log('Rows to update:', updateArray);
             });
         });
 
-        const entityCells = tbody.querySelectorAll('tr td:nth-child(3)');
-        entityCells.forEach(cell => {
-            cell.addEventListener('click', function () {
-                showDropdownEnt(this);
-            });
-        });
+
     } else {
         console.error('Journal table not found');
     }
@@ -496,7 +483,7 @@ console.log('Rows to update:', updateArray);
         });
     }
 
-    function showDropdownEnt(element) {
+    /*function showDropdownEnt(element) {
         // Only proceed if this is the first column
         if (element.cellIndex !== 2) return;
         if (element.querySelector('.entity-dropdown')) return;
@@ -554,7 +541,7 @@ console.log('Rows to update:', updateArray);
             element.innerHTML = this.options[this.selectedIndex].text;
             element.dataset.EntityId = this.value;
         });
-    }
+    }*/
 
     function disableEditing() {
         const table = document.querySelector('.journal-container table');
@@ -565,7 +552,7 @@ console.log('Rows to update:', updateArray);
         const rows = table.querySelectorAll('tbody tr');
         rows.forEach(row => {
             row.querySelectorAll('td').forEach((cell, index) => {
-                if (index < 6 && index >= 1) {
+                if (index < 5 && index >= 1) {
                     cell.contentEditable = false; // Disable editing
                 }
             });
@@ -587,7 +574,7 @@ console.log('Rows to update:', updateArray);
             }
             const account = row.querySelector('td:nth-child(2)');
             //const entity = row.querySelector('td:nth-child(3)');
-            const label = row.querySelector('td:nth-child(4)');
+            const label = row.querySelector('td:nth-child(3)');
             const debit = row.querySelector('.debit');
             const credit = row.querySelector('.credit');
 

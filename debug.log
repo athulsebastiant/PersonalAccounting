@@ -1,39 +1,14 @@
 Array
 (
-    [entryId] => 59
-    [insertArray] => Array
-        (
-            [0] => Array
-                (
-                    [lineID] => 5
-                    [account] => 57001
-                    [entity] => 
-                    [label] => bought soda
-                    [debit] => 15
-                    [credit] => 0
-                )
-
-            [1] => Array
-                (
-                    [lineID] => 6
-                    [account] => 11001
-                    [entity] => 
-                    [label] => cash
-                    [debit] => 0
-                    [credit] => 15
-                )
-
-        )
-
+    [entryId] => 62
     [updateArray] => Array
         (
             [0] => Array
                 (
                     [lineID] => 1
-                    [account] => 57001
-                    [entity] => 
-                    [label] => bought pizza
-                    [debit] => 120
+                    [account] => 51006
+                    [label] => bought c book
+                    [debit] => 200
                     [credit] => 0
                 )
 
@@ -41,32 +16,17 @@ Array
                 (
                     [lineID] => 2
                     [account] => 13001
-                    [entity] => 
-                    [label] => paid with sbi
+                    [label] => from sbi bank
                     [debit] => 0
-                    [credit] => 120
+                    [credit] => 200
                 )
 
-            [2] => Array
-                (
-                    [lineID] => 3
-                    [account] => 57001
-                    [entity] => 
-                    [label] => bought chips
-                    [debit] => 30
-                    [credit] => 0
-                )
+        )
 
-            [3] => Array
-                (
-                    [lineID] => 4
-                    [account] => 11001
-                    [entity] => 
-                    [label] => paid with cash
-                    [debit] => 0
-                    [credit] => 30
-                )
-
+    [deleteArray] => Array
+        (
+            [0] => 3
+            [1] => 4
         )
 
 )
