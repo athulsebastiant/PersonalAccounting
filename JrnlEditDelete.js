@@ -39,6 +39,33 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
 
+    function updateTotals() {
+        const table = document.querySelector('.journal-container table');
+        if (!table) return;
+
+        const tbody = table.querySelector('tbody');
+        if (!tbody) return;
+
+        let totalDebit = 0;
+        let totalCredit = 0;
+
+        tbody.querySelectorAll('tr:not(.total-row)').forEach(row => {
+            if (!row.classList.contains('toDelete')) {
+                const debitCell = row.querySelector('.debit');
+                const creditCell = row.querySelector('.credit');
+                if (debitCell) totalDebit += parseFloat(debitCell.textContent) || 0;
+                if (creditCell) totalCredit += parseFloat(creditCell.textContent) || 0;
+            }
+        });
+
+        const totalRow = tbody.querySelector('.total-row');
+        if (totalRow) {
+            const totalDebitCell = totalRow.querySelector('#totalDebit');
+            const totalCreditCell = totalRow.querySelector('#totalCredit');
+            if (totalDebitCell) totalDebitCell.textContent = totalDebit.toFixed(2);
+            if (totalCreditCell) totalCreditCell.textContent = totalCredit.toFixed(2);
+        }
+    }
 
 
 
@@ -66,6 +93,7 @@ document.addEventListener('DOMContentLoaded', function () {
             if (lastClickableIndex >= rows.length) {
                 rows.forEach(row => row.style.pointerEvents = 'none');
             }
+            updateTotals();
         }
 
         // Add double-click event listeners to all rows
@@ -103,6 +131,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 row.style.pointerEvents = 'auto';
             });
             lastClickableIndex = 0;
+            updateTotals();
         }
     }
 
@@ -273,7 +302,7 @@ document.addEventListener('DOMContentLoaded', function () {
             console.error('Journal table not found');
             return;
         }
-        const rows = table.querySelectorAll('tbody tr');
+        const rows = table.querySelectorAll('tbody tr:not(.total-row)');
         rows.forEach(row => {
             row.querySelectorAll('td').forEach((cell, index) => {
                 if (index < 5 && index >= 1) { // Only make the first 6 columns editable
@@ -281,8 +310,10 @@ document.addEventListener('DOMContentLoaded', function () {
 
                     if (index === 3) { // Debit column
                         cell.classList.add('debit');
+                        cell.addEventListener('input', updateTotals);
                     } else if (index === 4) { // Credit column
                         cell.classList.add('credit');
+                        cell.addEventListener('input', updateTotals);
                     }
 
                     if (index === 1) { // Account column
@@ -291,10 +322,11 @@ document.addEventListener('DOMContentLoaded', function () {
                         });
                     }
                 }
-                attachInputListeners(row);
-            });
 
+            });
+            attachInputListeners(row);
         });
+        updateTotals();
     }
 
 
@@ -323,15 +355,16 @@ document.addEventListener('DOMContentLoaded', function () {
 
         if (cellType === 'debit') {
             if (debitCell && debitCell.textContent.trim() !== '') {
-                creditCell.textContent = '0.0';
-                creditCell.dataset.value = '0.0';
+                creditCell.textContent = '0.00';
+                creditCell.dataset.value = '0.00';
             }
         } else if (cellType === 'credit') {
             if (creditCell && creditCell.textContent.trim() !== '') {
-                debitCell.textContent = '0.0';
-                debitCell.dataset.value = '0.0';
+                debitCell.textContent = '0.00';
+                debitCell.dataset.value = '0.00';
             }
         }
+        updateTotals();
     }
 
 

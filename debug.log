@@ -1,14 +1,14 @@
 Array
 (
-    [entryId] => 64
+    [entryId] => 59
     [updateArray] => Array
         (
             [0] => Array
                 (
                     [lineID] => 1
-                    [account] => 12002
-                    [label] => bought a printer
-                    [debit] => 5000
+                    [account] => 57001
+                    [label] => bought pizza
+                    [debit] => 120
                     [credit] => 0
                 )
 
@@ -16,16 +16,35 @@ Array
                 (
                     [lineID] => 2
                     [account] => 13001
-                    [label] => paid from sbi
+                    [label] => paid with sbi
                     [debit] => 0
-                    [credit] => 5000
+                    [credit] => 120
+                )
+
+            [2] => Array
+                (
+                    [lineID] => 3
+                    [account] => 57001
+                    [label] => bought chips
+                    [debit] => 30
+                    [credit] => 0
+                )
+
+            [3] => Array
+                (
+                    [lineID] => 4
+                    [account] => 11001
+                    [label] => paid with cash
+                    [debit] => 0
+                    [credit] => 30
                 )
 
         )
 
     [deleteArray] => Array
         (
-            [0] => 3
+            [0] => 5
+            [1] => 6
         )
 
 )
