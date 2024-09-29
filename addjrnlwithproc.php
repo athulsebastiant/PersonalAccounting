@@ -228,6 +228,7 @@ if (!isset($_SESSION['username'])) {
                     removeEnterLine();
                 }
             });
+            updateTotalRow();
         }
 
         function attachInputListeners(row) {
@@ -237,15 +238,60 @@ if (!isset($_SESSION['username'])) {
             if (debitCell) {
                 debitCell.addEventListener('input', () => {
                     updateOppositeCell(row, 'debit');
+                    updateTotalRow();
                 });
             }
 
             if (creditCell) {
                 creditCell.addEventListener('input', () => {
                     updateOppositeCell(row, 'credit');
+                    updateTotalRow();
                 });
             }
         }
+
+        function updateTotalRow() {
+            const table = document.getElementById('journalTable');
+            const tbody = table.querySelector('tbody');
+            let totalRow = tbody.querySelector('.total-row');
+
+            if (!totalRow) {
+                totalRow = tbody.insertRow();
+                totalRow.className = 'total-row';
+                totalRow.innerHTML = `
+            <td></td>
+            <td><strong>Total</strong></td>
+            <td class="total-debit"></td>
+            <td class="total-credit"></td>
+        `;
+            }
+
+            const debitTotal = calculateTotal('.debit');
+            const creditTotal = calculateTotal('.credit');
+
+            totalRow.querySelector('.total-debit').textContent = debitTotal.toFixed(2);
+            totalRow.querySelector('.total-credit').textContent = creditTotal.toFixed(2);
+
+            // Move the total row to the end
+            tbody.appendChild(totalRow);
+
+            // Move the "Enter line" row to the end, if it exists
+            const enterLineRow = tbody.querySelector('.enter-line');
+            if (enterLineRow) {
+                tbody.appendChild(enterLineRow.parentNode);
+            }
+        }
+
+        function calculateTotal(selector) {
+            const cells = document.querySelectorAll(selector);
+            return Array.from(cells).reduce((total, cell) => {
+                const value = parseFloat(cell.textContent) || 0;
+                return total + value;
+            }, 0);
+        }
+
+
+
 
         function updateOppositeCell(row, cellType) {
             const debitCell = row.querySelector('.debit');
@@ -283,6 +329,10 @@ if (!isset($_SESSION['username'])) {
             newCell.onclick = function() {
                 addNewRow(this);
             };
+            const totalRow = tbody.querySelector('.total-row');
+            if (totalRow) {
+                tbody.appendChild(totalRow);
+            }
         }
 
         function removeEnterLine() {
@@ -301,7 +351,7 @@ if (!isset($_SESSION['username'])) {
             if (tbody.rows.length === 0) {
                 addEnterLine();
             }
-
+            updateTotalRow();
             // Add click event listeners to existing first column cells
             const firstColumnCells = tbody.querySelectorAll('tr td:first-child');
             firstColumnCells.forEach(cell => {
@@ -436,7 +486,7 @@ if (!isset($_SESSION['username'])) {
 
 
         document.getElementById('postButton').addEventListener('click', function() {
-            const rows = document.querySelectorAll('#journalTable tbody tr');
+            const rows = document.querySelectorAll('#journalTable tbody tr:not(.total-row)');
             const description = document.getElementById('description').value;
             const jdate = document.getElementById('jDate').value;
             if (!validateEntries()) {

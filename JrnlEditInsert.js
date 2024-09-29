@@ -50,7 +50,7 @@ document.addEventListener('DOMContentLoaded', function () {
             return;
         }
 
-        const rows = table.querySelectorAll('tr:not(.enter-line)');
+        const rows = table.querySelectorAll('tr:not(.total-row):not(.enter-line)');
         let insertArray = [];
         let updateArray = [];
         let totalDebit = 0;
@@ -258,7 +258,7 @@ console.log('Rows to update:', updateArray);
             console.error('Journal table not found');
             return;
         }
-        const rows = table.querySelectorAll('tbody tr');
+        const rows = table.querySelectorAll('tbody tr:not(.total-row)');
         rows.forEach(row => {
             row.querySelectorAll('td').forEach((cell, index) => {
                 if (index < 5 && index >= 1) { // Only make the first 6 columns editable
@@ -266,8 +266,10 @@ console.log('Rows to update:', updateArray);
 
                     if (index === 3) { // Debit column
                         cell.classList.add('debit');
+                        cell.addEventListener('input', updateTotalRow);
                     } else if (index === 4) { // Credit column
                         cell.classList.add('credit');
+                        cell.addEventListener('input', updateTotalRow);
                     }
 
                     if (index === 1) { // Account column
@@ -280,15 +282,17 @@ console.log('Rows to update:', updateArray);
             });
 
         });
+        updateTotalRow();
     }
 
 
     function addNewRow(element) {
         const tbody = element.closest('tbody');
-        const newRow = tbody.insertRow(element.parentNode.rowIndex);
+        const totalRow = tbody.querySelector('.total-row');
+        const newRow = tbody.insertRow(tbody.rows.length - 1);
         newRow.classList.add('toInsert');
         let maxLineID = 0;
-        tbody.querySelectorAll('tr').forEach(row => {
+        tbody.querySelectorAll('tr:not(.total-row)').forEach(row => {
             const lineIDCell = row.cells[0];
             console.log(lineIDCell);
             if (lineIDCell) {
@@ -320,8 +324,10 @@ console.log('Rows to update:', updateArray);
 
                 if (i === 3) { // Debit column
                     cell.classList.add('debit');
+                    cell.addEventListener('input', updateTotalRow);
                 } else if (i === 4) { // Credit column
                     cell.classList.add('credit');
+                    cell.addEventListener('input', updateTotalRow);
                 }
 
 
@@ -336,6 +342,7 @@ console.log('Rows to update:', updateArray);
         attachInputListeners(newRow);
         element.parentNode.remove(); // Remove the "Enter line" row
         addEnterLine(); // Add a new "Enter line" at the bottom
+        updateTotalRow();
     }
 
 
@@ -346,12 +353,14 @@ console.log('Rows to update:', updateArray);
         if (debitCell) {
             debitCell.addEventListener('input', () => {
                 updateOppositeCell(row, 'debit');
+                updateTotalRow();
             });
         }
 
         if (creditCell) {
             creditCell.addEventListener('input', () => {
                 updateOppositeCell(row, 'credit');
+                updateTotalRow();
             });
         }
     }
@@ -393,9 +402,10 @@ console.log('Rows to update:', updateArray);
             return;
         }
 
-        const newRow = tbody.insertRow();
+        const totalRow = tbody.querySelector('.total-row');
+        const newRow = tbody.insertRow(tbody.rows.length - 1);
         const newCell = newRow.insertCell();
-        newCell.colSpan = 10; // Span all columns
+        newCell.colSpan = 9; // Span all columns
         newCell.className = 'enter-line';
         newCell.textContent = 'Enter line';
         newCell.onclick = function () {
@@ -403,20 +413,70 @@ console.log('Rows to update:', updateArray);
         };
     }
 
+
+    function updateTotalRow() {
+        const table = document.querySelector('.journal-container table');
+        if (!table) return;
+
+        const tbody = table.querySelector('tbody');
+        if (!tbody) return;
+
+        let totalDebit = 0;
+        let totalCredit = 0;
+
+        tbody.querySelectorAll('tr:not(.total-row):not(.enter-line)').forEach(row => {
+            const debitCell = row.querySelector('.debit');
+            const creditCell = row.querySelector('.credit');
+            if (debitCell) totalDebit += parseFloat(debitCell.textContent) || 0;
+            if (creditCell) totalCredit += parseFloat(creditCell.textContent) || 0;
+        });
+
+        let totalRow = tbody.querySelector('.total-row');
+        if (!totalRow) {
+            totalRow = document.createElement('tr');
+            totalRow.className = 'total-row';
+            totalRow.innerHTML = `
+            <td colspan="3"><strong>Total</strong></td>
+            <td class="total-debit"></td>
+            <td class="total-credit"></td>
+            <td colspan="4"></td>
+        `;
+            tbody.appendChild(totalRow);
+        }
+
+        const totalDebitCell = totalRow.querySelector('#total-debit');
+        const totalCreditCell = totalRow.querySelector('#total-credit');
+
+        if (totalDebitCell) totalDebitCell.textContent = totalDebit.toFixed(2);
+        if (totalCreditCell) totalCreditCell.textContent = totalCredit.toFixed(2);
+
+        // Ensure the total row is at the end
+        tbody.appendChild(totalRow);
+    }
+
+
+
+
+
     const table = document.querySelector('.journal-container table');
     if (table) {
         const tbody = table.querySelector('tbody');
-        if (tbody && tbody.rows.length === 0) {
-            addEnterLine();
-        }
+        if (tbody) {
+            if (tbody.rows.length === 0) {
+                addEnterLine();
+            }
+            updateTotalRow();
 
-        const accountCells = tbody.querySelectorAll('tr td:nth-child(2)');
-        accountCells.forEach(cell => {
-            cell.addEventListener('click', function () {
-                showDropdown(this);
+            const accountCells = tbody.querySelectorAll('tr:not(.total-row) td:nth-child(2)');
+            accountCells.forEach(cell => {
+                cell.addEventListener('click', function () {
+                    showDropdown(this);
+                });
             });
-        });
-
+            tbody.querySelectorAll('.debit-amount, .credit-amount').forEach(cell => {
+                cell.addEventListener('input', updateTotalRow);
+            });
+        }
 
     } else {
         console.error('Journal table not found');
@@ -490,14 +550,14 @@ console.log('Rows to update:', updateArray);
         // Create a dropdown element
         const dropdown = document.createElement('select');
         dropdown.className = 'entity-dropdown';
-
+ 
         // Add a loading option
         dropdown.innerHTML = '<option>Loading...</option>';
-
+ 
         // Insert the dropdown into the cell
         element.innerHTML = '';
         element.appendChild(dropdown);
-
+ 
         // Fetch data from PHP using AJAX
         fetch('get_entities.php')
             .then(response => {
@@ -510,16 +570,16 @@ console.log('Rows to update:', updateArray);
                 try {
                     const data = JSON.parse(text);
                     console.log('Parsed data:', data);
-
+ 
                     // Clear the dropdown
                     dropdown.innerHTML = '';
-
+ 
                     // Add a default option
                     const defaultOption = document.createElement('option');
                     defaultOption.text = 'Select an entity';
                     defaultOption.value = '';
                     dropdown.add(defaultOption);
-
+ 
                     // Add options from the fetched data
                     data.forEach(entity => {
                         const option = document.createElement('option');
@@ -549,11 +609,14 @@ console.log('Rows to update:', updateArray);
             console.error('Journal table not found');
             return;
         }
-        const rows = table.querySelectorAll('tbody tr');
+        const rows = table.querySelectorAll('tbody tr:not(.total-row)');
         rows.forEach(row => {
             row.querySelectorAll('td').forEach((cell, index) => {
                 if (index < 5 && index >= 1) {
                     cell.contentEditable = false; // Disable editing
+                    if (index === 3 || index === 4) {
+                        cell.removeEventListener('input', updateTotalRow);
+                    }
                 }
             });
         });
@@ -563,7 +626,7 @@ console.log('Rows to update:', updateArray);
 
     function validateFields() {
         const table = document.querySelector('.journal-container table tbody');
-        const rows = table.querySelectorAll('tr:not(.enter-line)');
+        const rows = table.querySelectorAll('tr:not(.total-row):not(.enter-line)');
         let valid = true;
         let errorMessages = [];
 

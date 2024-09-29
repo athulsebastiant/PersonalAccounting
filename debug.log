@@ -1,14 +1,14 @@
 Array
 (
-    [entryId] => 62
+    [entryId] => 64
     [updateArray] => Array
         (
             [0] => Array
                 (
                     [lineID] => 1
-                    [account] => 51006
-                    [label] => bought c book
-                    [debit] => 200
+                    [account] => 12002
+                    [label] => bought a printer
+                    [debit] => 4000
                     [credit] => 0
                 )
 
@@ -16,9 +16,9 @@ Array
                 (
                     [lineID] => 2
                     [account] => 13001
-                    [label] => from sbi bank
+                    [label] => paid from sbi
                     [debit] => 0
-                    [credit] => 200
+                    [credit] => 4000
                 )
 
         )
@@ -26,7 +26,6 @@ Array
     [deleteArray] => Array
         (
             [0] => 3
-            [1] => 4
         )
 
 )

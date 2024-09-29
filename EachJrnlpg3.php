@@ -303,7 +303,7 @@ WHERE
                 <?php endif; ?>
         </div>
 
-        <table>
+        <table id="journalTable">
             <thead>
                 <tr>
                     <th>Line Id</th>
@@ -330,8 +330,8 @@ WHERE
                     <td>" . htmlspecialchars($row['AccountID']) . " - " . htmlspecialchars($row['AccountName']) . "</td>
                         
                         <td>" . htmlspecialchars($row['description']) . "</td>
-                        <td>" . htmlspecialchars($row['DebitAmount']) . "</td>
-                        <td>" . htmlspecialchars($row['CreditAmount']) . "</td>
+                        <td class='debit-amount'>" . htmlspecialchars($row['DebitAmount']) . "</td>
+                        <td class='credit-amount'>" . htmlspecialchars($row['CreditAmount']) . "</td>
                         
                         <td>" . htmlspecialchars($row['createdBy']) . "</td>
                         
@@ -343,6 +343,12 @@ WHERE
                       </tr>";
                 }
                 ?>
+                <tr id="totalRow" class="total-row">
+                    <td colspan="3"><strong>Total</strong></td>
+                    <td id="totalDebit"><?php echo number_format($total_debit, 2); ?></td>
+                    <td id="totalCredit"><?php echo number_format($total_credit, 2); ?></td>
+                    <td colspan="4"></td>
+                </tr>
             </tbody>
 
         </table>
@@ -361,7 +367,7 @@ WHERE
             const table = document.querySelector('table');
             const editableColumns = [0, 1, 2, 3, 4, 5]; // Columns for Account, Entity, Label, Debit, and Credit (0-indexed)
 
-            table.querySelectorAll('tbody tr').forEach(row => {
+            table.querySelectorAll('tbody tr:not(.total-row)').forEach(row => {
                 editableColumns.forEach(colIndex => {
                     const cell = row.cells[colIndex];
                     if (colIndex === 1) {
@@ -374,6 +380,10 @@ WHERE
                     }
                     cell.classList.add('editable');
                 });
+                const debitCell = row.querySelector('.debit-amount');
+                const creditCell = row.querySelector('.credit-amount');
+                if (debitCell) debitCell.addEventListener('input', updateTotals);
+                if (creditCell) creditCell.addEventListener('input', updateTotals);
             });
         }
 
@@ -394,6 +404,21 @@ WHERE
             // Remove any open dropdowns
             document.querySelectorAll('.account-dropdown').forEach(dropdown => dropdown.remove());
         }
+
+        function updateTotals() {
+            let totalDebit = 0;
+            let totalCredit = 0;
+            const rows = document.querySelectorAll('table tbody tr:not(.total-row)');
+            rows.forEach(row => {
+                const debitCell = row.querySelector('.debit-amount');
+                const creditCell = row.querySelector('.credit-amount');
+                totalDebit += parseFloat(debitCell.textContent) || 0;
+                totalCredit += parseFloat(creditCell.textContent) || 0;
+            });
+            document.getElementById('totalDebit').textContent = totalDebit.toFixed(2);
+            document.getElementById('totalCredit').textContent = totalCredit.toFixed(2);
+        }
+
 
         // Function to show account dropdown
         function showDropdown(element) {
@@ -562,12 +587,12 @@ WHERE
             }
             const entryId = entryIdMatch[0];
 
-            document.querySelectorAll('table tbody tr').forEach(row => {
+            document.querySelectorAll('table tbody tr:not(.total-row)').forEach(row => {
                 const urlParams = new URLSearchParams(window.location.search);
                 const entryID = urlParams.get('EntryID');
-                const label = row.cells[3].textContent.trim();
-                const debit = parseFloat(row.cells[4].textContent.trim()) || 0;
-                const credit = parseFloat(row.cells[5].textContent.trim()) || 0;
+                const label = row.cells[2].textContent.trim();
+                const debit = parseFloat(row.cells[3].textContent.trim()) || 0;
+                const credit = parseFloat(row.cells[4].textContent.trim()) || 0;
 
                 if (!label) {
                     alert('Label field cannot be empty.');

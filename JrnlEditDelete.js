@@ -45,7 +45,7 @@ document.addEventListener('DOMContentLoaded', function () {
     function enableRowDeletion() {
         const table = document.querySelector('.journal-container table');
         const tbody = table.querySelector('tbody');
-        const rows = Array.from(tbody.querySelectorAll('tr')).reverse(); // Reverse to start from bottom
+        const rows = Array.from(tbody.querySelectorAll('tr:not(.total-row)')).reverse(); // Reverse to start from bottom
         let lastClickableIndex = 0; // Start with the last row (remember, we reversed the array)
 
         function handleRowDblClick(event) {
@@ -149,7 +149,7 @@ document.addEventListener('DOMContentLoaded', function () {
         console.log("Extracted Entry ID:", entryId);
 
         // Get all rows, including those marked for deletion
-        const rows = table.querySelectorAll('tr');
+        const rows = table.querySelectorAll('tr:not(.total-row)');
 
         rows.forEach((row, index) => {
             try {
@@ -480,7 +480,7 @@ document.addEventListener('DOMContentLoaded', function () {
     function validateFields() {
         const table = document.querySelector('.journal-container table tbody');
         // Select all rows except those with the 'toDelete' class
-        const rows = table.querySelectorAll('tr:not(.toDelete)');
+        const rows = table.querySelectorAll('tr:not(.toDelete):not(.total-row)');
         let valid = true;
         let errorMessages = [];
 
