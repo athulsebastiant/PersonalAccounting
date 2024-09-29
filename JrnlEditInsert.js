@@ -288,7 +288,7 @@ console.log('Rows to update:', updateArray);
 
     function addNewRow(element) {
         const tbody = element.closest('tbody');
-        const totalRow = tbody.querySelector('.total-row');
+        // const totalRow = tbody.querySelector('.total-row');
         const newRow = tbody.insertRow(tbody.rows.length - 1);
         newRow.classList.add('toInsert');
         let maxLineID = 0;
@@ -371,13 +371,13 @@ console.log('Rows to update:', updateArray);
 
         if (cellType === 'debit') {
             if (debitCell && debitCell.textContent.trim() !== '') {
-                creditCell.textContent = '0.0';
-                creditCell.dataset.value = '0.0';
+                creditCell.textContent = '0.00';
+                creditCell.dataset.value = '0.00';
             }
         } else if (cellType === 'credit') {
             if (creditCell && creditCell.textContent.trim() !== '') {
-                debitCell.textContent = '0.0';
-                debitCell.dataset.value = '0.0';
+                debitCell.textContent = '0.00';
+                debitCell.dataset.value = '0.00';
             }
         }
     }
@@ -402,7 +402,7 @@ console.log('Rows to update:', updateArray);
             return;
         }
 
-        const totalRow = tbody.querySelector('.total-row');
+        //const totalRow = tbody.querySelector('.total-row');
         const newRow = tbody.insertRow(tbody.rows.length - 1);
         const newCell = newRow.insertCell();
         newCell.colSpan = 9; // Span all columns
@@ -420,36 +420,36 @@ console.log('Rows to update:', updateArray);
 
         const tbody = table.querySelector('tbody');
         if (!tbody) return;
+        if (isEditing) {
+            let totalDebit = 0;
+            let totalCredit = 0;
 
-        let totalDebit = 0;
-        let totalCredit = 0;
+            tbody.querySelectorAll('tr:not(.total-row):not(.enter-line)').forEach(row => {
+                const debitCell = row.querySelector('.debit');
+                const creditCell = row.querySelector('.credit');
+                if (debitCell) totalDebit += parseFloat(debitCell.textContent) || 0;
+                if (creditCell) totalCredit += parseFloat(creditCell.textContent) || 0;
+            });
 
-        tbody.querySelectorAll('tr:not(.total-row):not(.enter-line)').forEach(row => {
-            const debitCell = row.querySelector('.debit');
-            const creditCell = row.querySelector('.credit');
-            if (debitCell) totalDebit += parseFloat(debitCell.textContent) || 0;
-            if (creditCell) totalCredit += parseFloat(creditCell.textContent) || 0;
-        });
-
-        let totalRow = tbody.querySelector('.total-row');
-        if (!totalRow) {
-            totalRow = document.createElement('tr');
-            totalRow.className = 'total-row';
-            totalRow.innerHTML = `
+            let totalRow = tbody.querySelector('.total-row');
+            if (!totalRow) {
+                totalRow = tbody.insertRow();
+                totalRow.className = 'total-row';
+                totalRow.innerHTML = `
             <td colspan="3"><strong>Total</strong></td>
             <td class="total-debit"></td>
             <td class="total-credit"></td>
             <td colspan="4"></td>
         `;
-            tbody.appendChild(totalRow);
+                //tbody.appendChild(totalRow);
+            }
+
+            const totalDebitCell = totalRow.querySelector('#totalDebit');
+            const totalCreditCell = totalRow.querySelector('#totalCredit');
+
+            if (totalDebitCell) totalDebitCell.textContent = totalDebit.toFixed(2);
+            if (totalCreditCell) totalCreditCell.textContent = totalCredit.toFixed(2);
         }
-
-        const totalDebitCell = totalRow.querySelector('#total-debit');
-        const totalCreditCell = totalRow.querySelector('#total-credit');
-
-        if (totalDebitCell) totalDebitCell.textContent = totalDebit.toFixed(2);
-        if (totalCreditCell) totalCreditCell.textContent = totalCredit.toFixed(2);
-
         // Ensure the total row is at the end
         tbody.appendChild(totalRow);
     }
@@ -465,7 +465,7 @@ console.log('Rows to update:', updateArray);
             if (tbody.rows.length === 0) {
                 addEnterLine();
             }
-            updateTotalRow();
+            //updateTotalRow();
 
             const accountCells = tbody.querySelectorAll('tr:not(.total-row) td:nth-child(2)');
             accountCells.forEach(cell => {
@@ -473,9 +473,9 @@ console.log('Rows to update:', updateArray);
                     showDropdown(this);
                 });
             });
-            tbody.querySelectorAll('.debit-amount, .credit-amount').forEach(cell => {
+            /*tbody.querySelectorAll('.debit-amount, .credit-amount').forEach(cell => {
                 cell.addEventListener('input', updateTotalRow);
-            });
+            });*/
         }
 
     } else {

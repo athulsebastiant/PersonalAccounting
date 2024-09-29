@@ -245,7 +245,7 @@ WHERE
             padding: 5px;
             position: absolute;
             z-index: 1;
-            bottom: 125%;
+            bottom: 60%;
             /* Position above the button */
             left: 50%;
             margin-left: -110px;
@@ -288,7 +288,7 @@ WHERE
         <button id="editInsert">Edit with Insertion</button>
         <div class="tooltip">
             <button id="editDelete">Edit with Deletions</button>
-            <span class="tooltiptext">Double-click on a row to mark it for deletion.</span>
+            <span class="tooltiptext">Double-click on a row, starting from the last row, to mark it for deletion.</span>
         </div>
 
     </div>
