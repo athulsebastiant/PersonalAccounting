@@ -88,6 +88,7 @@
                 <button type="submit" id="loginBtn">Login</button>
             </div>
         </form>
+        <a href="registrationpg.php">New User?</a>
         <p id="message"></p>
     </div>
 

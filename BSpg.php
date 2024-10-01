@@ -231,10 +231,10 @@ $result = $conn->query($sql);
             <thead>
                 <tr>
                     <th>AccountID</th>
-                    <th>Account Name</th>
+                    <th>Assets</th>
                     <th>Debit(.₹)</th>
                     <th>Account ID</th>
-                    <th>Account name</th>
+                    <th>Liabilities and Equity</th>
                     <th>Credit(.₹)</th>
                 </tr>
             </thead>

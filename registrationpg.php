@@ -3,6 +3,7 @@
 
 <head>
     <meta charset="utf-8">
+    <link rel="icon" type="image/x-icon" href="favicon.ico">
     <title>myRegistration</title>
     <link rel="stylesheet" href="styles.css">
     <script src="scripts.js"></script>
@@ -11,7 +12,8 @@
 
 <body>
     <div class="container">
-        <h3 style="color: #4CAF50; font-size:30px;">Get Started</h3>
+
+        <h3 style="color: #4CAF50; font-size:30px;">Personal Accounting | Get Started</h3>
         <h5>Instant access.</h5>
     </div>
     <div class="form-container">

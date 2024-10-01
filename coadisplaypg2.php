@@ -16,7 +16,8 @@ if ($_SESSION['user_type'] == "Auditor") {
 $selectedCategoryID = isset($_GET['CategoryID']) ? $_GET['CategoryID'] : '';
 
 // Fetch unique CategoryIDs to create filter buttons
-$categorySql = "SELECT DISTINCT CategoryID FROM coa ORDER BY CategoryID";
+$categorySql = "SELECT DISTINCT CategoryID, CategoryName  FROM accountmaster ORDER BY CategoryID";
+
 $categoryResult = $conn->query($categorySql);
 
 // SQL query to fetch account information
@@ -468,7 +469,8 @@ $result = $conn->query($sql);
         if ($categoryResult->num_rows > 0) {
             while ($categoryRow = $categoryResult->fetch_assoc()) {
                 $categoryID = $categoryRow['CategoryID'];
-                echo "<button onclick=\"window.location.href='?CategoryID=$categoryID'\">Category $categoryID</button>";
+                $categoryName = $categoryRow['CategoryName'];
+                echo "<button onclick=\"window.location.href='?CategoryID=$categoryID'\">Category $categoryID $categoryName</button>";
             }
         }
         ?>

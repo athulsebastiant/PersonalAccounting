@@ -220,10 +220,10 @@ $result = $conn->query($sql);
                 <tr>
 
                     <th>AccountID</th>
-                    <th>AccountName</th>
+                    <th>Income</th>
                     <th>Credit(.₹)</th>
                     <th>AccountID</th>
-                    <th>AccountName</th>
+                    <th>Expenses</th>
                     <th>Debit(.₹)</th>
                 </tr>
             </thead>

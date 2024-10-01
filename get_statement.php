@@ -106,10 +106,11 @@
                     <thead>
                             <tr>
                                 <th>Date</th>
-                                
+                                <th>Entry ID</th>
+                                <th>Journal Description</th>
                                 <th>Debit Amount</th>
                                 <th>Credit Amount</th>
-                                <th>Description</th>
+                                <th>Narrative</th>
                             </tr>
                             </thead>";
 
@@ -118,6 +119,7 @@
                         <tbody>
                         <tr>
                                 <td>" . htmlspecialchars($row['Date']) . "</td>
+                                <td></td><td></td>
                                 <td>" . htmlspecialchars($row['DebitAmount']) . "</td>
                                 <td>" . htmlspecialchars($row['CreditAmount']) . "</td>
                                 <td>" . htmlspecialchars($row['Description']) . "</td>
@@ -155,7 +157,8 @@
                     while ($row = $result->fetch_assoc()) {
                         echo "<tr>
                                 <td>" . htmlspecialchars($row['createdDate']) . "</td>
-                                
+                                <td>" . htmlspecialchars($row['EntryID']) . "</td>
+                                <td>" . htmlspecialchars($row['JournalDes']) . "</td>
                                 <td>" . htmlspecialchars($row['DebitAmount']) . "</td>
                                 <td>" . htmlspecialchars($row['CreditAmount']) . "</td>
                                 <td>" . htmlspecialchars($row['description']) . "</td>
