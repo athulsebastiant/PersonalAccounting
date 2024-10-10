@@ -37,6 +37,6 @@ git clone [https://github.com/yourusername/accounting-website.git](https://githu
 
 Import the database schema into MySQL (dbof0110.sql).
 
-Update the database connection details in the config.php file.
+Update the database connection details in the Connection.php file.
 
 Open the website in a local server using XAMPP or similar tools.
