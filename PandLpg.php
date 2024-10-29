@@ -24,7 +24,7 @@ if ($result->num_rows > 0) {
 } else {
     $earliestTimestamp = "As of";
 }
-$sql = "CALL PandL31()";
+$sql = "CALL pl32()";
 $result = $conn->query($sql);
 
 ?>
@@ -151,6 +151,11 @@ $result = $conn->query($sql);
             font-weight: bold;
         }
 
+        .blue {
+            color: blue;
+            font-weight: bold;
+        }
+
         .red {
             color: red;
             font-weight: bold;
@@ -240,13 +245,20 @@ $result = $conn->query($sql);
                             $colorClass1 = 'red';
                         } elseif ($row['lossname'] == 'Profit') {
                             $colorClass = 'green';
+                        } elseif ($row['lossname'] == 'Total Expenses') {
+                            $colorClass = 'blue';
+                        } elseif ($row['accountName'] == 'Total Income') {
+                            $colorClass1 = 'blue';
                         }
+
+
                         echo "<tr>
                         
-                                <td>" . htmlspecialchars($row['accountID']) . "</td>
+                               <td>" . ($row['accountID'] == 0 ? '' : htmlspecialchars($row['accountID'])) . "</td>
+
                                 <td class='$colorClass1'>" . htmlspecialchars($row['accountName']) . "</td>
                                 <td>" . htmlspecialchars($row['credit']) . "</td>
-                                <td>" . htmlspecialchars($row['lossid']) . "</td>
+                               <td>" . ($row['lossid'] == 0 ? '' : htmlspecialchars($row['lossid'])) . "</td>
                                 <td class='$colorClass'>" . htmlspecialchars($row['lossname']) . "</td>
                                 <td>" . htmlspecialchars($row['debit']) . "</td>
                               </tr>";

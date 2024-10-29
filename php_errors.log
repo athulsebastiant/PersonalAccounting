@@ -1,1 +1,65 @@
-[19-Sep-2024 14:28:54 Europe/Berlin] Error: Unknown column 'reg_no' in 'field list'
+	        WebDriver driver = new EdgeDriver();
+	        driver.manage().timeouts().implicitlyWait(Duration.ofSeconds(10));
+	        
+	        // Navigate to the page and login (as per your previous code)
+	        driver.navigate().to("http://localhost/mp/loginpg2.php");
+	        WebElement w1 = driver.findElement(By.id("username"));
+	        w1.sendKeys("gooboy21");
+	        WebElement w2 = driver.findElement(By.id("password"));
+	        w2.sendKeys("Wwe45G@s");
+	        WebElement w3 = driver.findElement(By.id("loginBtn"));
+	        w3.click();
+	        
+	        // Wait for and click on General Settings link
+	        WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(10));
+	        WebElement genSettLink = wait.until(ExpectedConditions.presenceOfElementLocated(By.xpath("//a[text()='General Settings']")));
+	        genSettLink.click();
+	        
+	        // Click on the "Edit" button
+	        WebElement editButton = driver.findElement(By.id("edit-btn"));
+	        editButton.click();
+	        
+	        // Find the file input element
+	       // WebDriverWait waitForFileInput = new WebDriverWait(driver, Duration.ofSeconds(10));
+	        WebElement fileInput = wait.until(ExpectedConditions.presenceOfElementLocated(By.xpath("//input[@type='file' and @name='logo']")));
+  
+	        //fileInput.sendKeys("C:\\xampp\\htdocs\\MP\\ATSCorp.jpg");
+	        //System.out.println("clicked");
+	        
+	        Robot robot;
+			try {
+				robot = new Robot();
+			
+	        // Set file path to clipboard
+	        StringSelection ss = new StringSelection("C:/xampp/htdocs/MP/ATSCorp.jpg");
+	        Toolkit toolkit = Toolkit.getDefaultToolkit();
+	        Clipboard clipboard = toolkit.getSystemClipboard();
+	        clipboard.setContents(ss, null);
+	        
+	        // Paste the file path
+	        robot.keyPress(KeyEvent.VK_CONTROL);
+	        robot.keyPress(KeyEvent.VK_V);
+	        robot.keyRelease(KeyEvent.VK_V);
+	        robot.keyRelease(KeyEvent.VK_CONTROL);
+	        System.out.println("Nothing here1");
+	        robot.delay(1000);
+	        
+	        // Press Enter to confirm file selection
+	        robot.keyPress(KeyEvent.VK_ENTER);
+	        robot.keyRelease(KeyEvent.VK_ENTER);
+	        System.out.println("Nothing here");
+	        
+			} catch (AWTException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+	        
+	        
+	        // Wait for file to be uploaded (you might need to adjust the wait time)
+	        try {
+				Thread.sleep(5000);
+			} catch (InterruptedException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+	

@@ -15,7 +15,7 @@ $company_info_result = $conn->query($company_info_sql);
 $company_info = $company_info_result->fetch_assoc();
 
 // Call the stored procedure
-$sql = "CALL PandL31()";
+$sql = "CALL pl32()";
 $result = $conn->query($sql);
 
 class PDF extends FPDF

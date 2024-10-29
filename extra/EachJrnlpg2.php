@@ -2,12 +2,7 @@
 // Database configuration
 include "SessionPG.php";
 include "Connection.php";
-if ($_SESSION['user_type'] == "Auditor") {
-    // Redirect to login page if not logged in
-    $_SESSION['message'] = "Access denied. Auditors are not allowed to view the Journal page.";
-    header("Location: Homepg.php");
-    exit();
-}
+
 // Fetch EntryID from query parameter
 if (isset($_GET['EntryID'])) {
     // Retrieve the EntryID from the URL
@@ -25,12 +20,12 @@ if (isset($_GET['EntryID'])) {
 SELECT 
     jd.LineID,
     jd.AccountID,
-    
+    jd.EntityID,
     coa.AccountName,
     jd.description,
     jd.DebitAmount,
     jd.CreditAmount,
-    
+    e.name AS EntityName,
     jd.createdBy,
     jd.createdDateTime,
     jd.modifiedBy,
@@ -39,7 +34,8 @@ FROM
     jrldetailed jd
 JOIN 
     coa ON jd.AccountID = coa.AccountNo
-
+LEFT JOIN 
+    entity e ON jd.EntityID = e.EntityID
 WHERE 
     jd.EntryID = ?";
     $stmt_detail = $conn->prepare($sql_detail);
@@ -60,9 +56,6 @@ WHERE
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="Syles.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-
     <style>
         .journal-container {
             max-width: 100%;
@@ -136,84 +129,90 @@ WHERE
             font-weight: bold;
         }
 
+        .navbar {
+            background-color: #333;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            font-family: Arial, sans-serif;
+            /* Set a consistent font */
+        }
 
-        /* Common button styles */
-        .filter-buttons button,
-        .save-btn {
-            margin-left: 5px;
-            padding: 10px 16px;
+        .navbar a,
+        .navbar .dropbtn {
+            color: white;
+            text-align: center;
+            padding: 14px 20px;
+            /* Increased horizontal padding */
+            text-decoration: none;
+            font-size: 16px;
+            /* Consistent font size */
+        }
+
+        .dropdown {
+            overflow: hidden;
+        }
+
+        .dropdown .dropbtn {
+            border: none;
+            outline: none;
+            background-color: inherit;
+            margin: 0;
+            cursor: pointer;
+        }
+
+        .navbar a:hover,
+        .dropdown:hover .dropbtn {
+            background-color: #ddd;
+            color: black;
+        }
+
+        .dropdown-content {
+            display: none;
+            position: absolute;
+            background-color: #f9f9f9;
+            min-width: 160px;
+            box-shadow: 0px 8px 16px 0px rgba(0, 0, 0, 0.2);
+            z-index: 1;
+        }
+
+        .dropdown-content a {
+            float: none;
+            color: black;
+            padding: 12px 16px;
+            text-decoration: none;
+            display: block;
+            text-align: left;
+        }
+
+        .dropdown-content a:hover {
+            background-color: #ddd;
+        }
+
+        .dropdown:hover .dropdown-content {
+            display: block;
+        }
+
+        /* Push logout to the right */
+        .navbar a:last-child {
+            margin-left: auto;
+        }
+
+        .filter-buttons {
+            margin-bottom: 15px;
+        }
+
+        .filter-buttons button {
+            margin-right: 10px;
+            padding: 8px 16px;
             background-color: #4CAF50;
             color: #f9f9f9;
             border: none;
-            border-radius: 4px;
             cursor: pointer;
-            font-size: 14px;
-            font-weight: 500;
-            transition: all 0.3s ease;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
         }
 
-        /* Filter buttons container */
-        .filter-buttons {
-            margin-bottom: 20px;
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
-        }
-
-        /* Filter buttons specific styles */
-        .filter-buttons button {
-            margin-right: 0;
-            /* Remove margin-right as we're using gap */
-        }
-
-        /* Save button specific styles */
-        .save-btn {
-            display: inline-block;
-            /* Changed from 'none' to make it visible by default */
-            margin-left: 5px;
-            margin-top: 5px;
-            padding: 8px 12px;
-            /* Slightly smaller padding */
-            font-size: 13px;
-            /* Slightly smaller font size */
-        }
-
-        /* Hover effects for all buttons */
-        .filter-buttons button:hover,
-        .save-btn:hover {
+        .filter-buttons button:hover {
             background-color: #45a049;
-            transform: translateY(-2px);
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.15);
-        }
-
-        /* Active effects for all buttons */
-        .filter-buttons button:active,
-        .save-btn:active {
-            transform: translateY(1px);
-            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
-        }
-
-        /* Focus styles for accessibility */
-        .filter-buttons button:focus,
-        .save-btn:focus {
-            outline: none;
-            box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.4);
-        }
-
-        /* Media query for smaller screens */
-        @media (max-width: 600px) {
-            .filter-buttons {
-                flex-direction: column;
-                align-items: stretch;
-            }
-
-            .filter-buttons button,
-            .save-btn {
-                width: 100%;
-                margin-right: 0;
-                margin-bottom: 10px;
-            }
         }
 
         .editable {
@@ -225,48 +224,13 @@ WHERE
             outline: 2px solid #007bff;
             background-color: #ffffff;
         }
-
-        .toDelete {
-            border: 2px solid red !important;
-        }
-
-        .tooltip {
-            position: relative;
-            display: inline-block;
-        }
-
-        .tooltip .tooltiptext {
-            visibility: hidden;
-            width: 220px;
-            background-color: #555;
-            color: #fff;
-            text-align: center;
-            border-radius: 6px;
-            padding: 5px;
-            position: absolute;
-            z-index: 1;
-            bottom: 60%;
-            /* Position above the button */
-            left: 50%;
-            margin-left: -110px;
-            opacity: 0;
-            transition: opacity 0.3s;
-        }
-
-        .tooltip:hover .tooltiptext {
-            visibility: visible;
-            opacity: 1;
-        }
     </style>
-    <link rel="icon" type="image/x-icon" href="favicon.ico">
-    <title>Personal Accounting - Jrnl Entry</title>
-
+    <title>Journal Entry Details</title>
 </head>
 
 <body>
     <div class="navbar">
-        <img src="logo-no-background.png" style="height: 34px; width:auto">
-        <a style="margin-left: 5px;" href="Homepg.php">Dashboard</a>
+        <a href="Homepg.php">Dashboard</a>
         <div class="dropdown">
             <button class="dropbtn">Reporting
                 <i class="fa fa-caret-down"></i>
@@ -275,43 +239,36 @@ WHERE
                 <a href="BSpg.php">Balance Sheet</a>
                 <a href="PandLpg.php">Profit and Loss</a>
                 <a href="TrialBalancepg.php">Trial Balance</a>
-                <a href="AccountStatement.php">Account Statement</a>
+
             </div>
         </div>
-        <a href="view_company_info.php">General Settings</a>
-        <a href="Profilepg.php">Profile</a>
+
         <a href="logout.php">Logout</a>
     </div>
     <br>
     <div class="filter-buttons">
-        <button id="edit">Edit</button>
-        <button id="editInsert">Edit with Insertion</button>
-        <div class="tooltip">
-            <button id="editDelete">Edit with Deletions</button>
-            <span class="tooltiptext">Double-click on a row, starting from the last row, to mark it for deletion.</span>
-        </div>
-
+        <button>Edit</button>
     </div>
     <div class="journal-container">
         <div class="journal-header">
             <?php if ($master_data) : ?>
-                <h1 id="jrdesc"><?php echo htmlspecialchars($master_data['description']); ?></h1>
-                <h4 id="entryId">Entry No.<?php echo $entry_id; ?></h2>
+                <h1><?php echo htmlspecialchars($master_data['description']); ?></h1>
+                <h4>Entry No.<?php echo $entry_id; ?></h2>
                     <div class="date"><?php echo htmlspecialchars($master_data['jdate']); ?></div>
                 <?php else : ?>
                     <h1>No data found</h1>
                 <?php endif; ?>
         </div>
 
-        <table id="journalTable">
+        <table>
             <thead>
                 <tr>
                     <th>Line Id</th>
                     <th>Account</th>
-
+                    <th>Entity</th>
                     <th>Label</th>
-                    <th>Debit(.₹)</th>
-                    <th>Credit(.₹)</th>
+                    <th>Debit</th>
+                    <th>Credit</th>
                     <th>Created By</th>
                     <th>Created Date Time</th>
                     <th>Modified By</th>
@@ -328,10 +285,10 @@ WHERE
                     echo "<tr>
                     <td>" . htmlspecialchars($row['LineID'])  . "</td>    
                     <td>" . htmlspecialchars($row['AccountID']) . " - " . htmlspecialchars($row['AccountName']) . "</td>
-                        
+                        <td>" . htmlspecialchars($row['EntityID']) . " - " . htmlspecialchars($row['EntityName']) . "</td>
                         <td>" . htmlspecialchars($row['description']) . "</td>
-                        <td class='debit-amount'>" . htmlspecialchars($row['DebitAmount']) . "</td>
-                        <td class='credit-amount'>" . htmlspecialchars($row['CreditAmount']) . "</td>
+                        <td>" . htmlspecialchars($row['DebitAmount']) . "</td>
+                        <td>" . htmlspecialchars($row['CreditAmount']) . "</td>
                         
                         <td>" . htmlspecialchars($row['createdBy']) . "</td>
                         
@@ -343,12 +300,6 @@ WHERE
                       </tr>";
                 }
                 ?>
-                <tr id="totalRow" class="total-row">
-                    <td colspan="3"><strong>Total</strong></td>
-                    <td id="totalDebit"><?php echo number_format($total_debit, 2); ?></td>
-                    <td id="totalCredit"><?php echo number_format($total_credit, 2); ?></td>
-                    <td colspan="4"></td>
-                </tr>
             </tbody>
 
         </table>
@@ -358,16 +309,12 @@ WHERE
     // Close the database connection
     $conn->close();
     ?>
-
-
-
-
     <script>
         function makeEditable() {
             const table = document.querySelector('table');
-            const editableColumns = [1, 2, 3, 4]; // Columns for Account, Entity, Label, Debit, and Credit (0-indexed)
+            const editableColumns = [0, 1, 2, 3, 4, 5]; // Columns for Account, Entity, Label, Debit, and Credit (0-indexed)
 
-            table.querySelectorAll('tbody tr:not(.total-row)').forEach(row => {
+            table.querySelectorAll('tbody tr').forEach(row => {
                 editableColumns.forEach(colIndex => {
                     const cell = row.cells[colIndex];
                     if (colIndex === 1) {
@@ -375,15 +322,16 @@ WHERE
                         cell.addEventListener('click', function() {
                             showDropdown(this);
                         });
+                    } else if (colIndex === 2) {
+                        // For Entity column, add click listener to show dropdown
+                        cell.addEventListener('click', function() {
+                            showDropdownEnt(this);
+                        });
                     } else {
                         cell.setAttribute('contenteditable', 'true');
                     }
                     cell.classList.add('editable');
                 });
-                const debitCell = row.querySelector('.debit-amount');
-                const creditCell = row.querySelector('.credit-amount');
-                if (debitCell) debitCell.addEventListener('input', updateTotals);
-                if (creditCell) creditCell.addEventListener('input', updateTotals);
             });
         }
 
@@ -394,31 +342,16 @@ WHERE
                 cell.removeAttribute('contenteditable');
                 cell.classList.remove('editable');
                 // Remove click listeners from Account and Entity cells
-                if (cell.cellIndex === 1) {
+                if (cell.cellIndex === 1 || cell.cellIndex === 2) {
                     cell.removeEventListener('click', function() {
                         if (cell.cellIndex === 1) showDropdown(this);
-
+                        else showDropdownEnt(this);
                     });
                 }
             });
             // Remove any open dropdowns
-            document.querySelectorAll('.account-dropdown').forEach(dropdown => dropdown.remove());
+            document.querySelectorAll('.account-dropdown, .entity-dropdown').forEach(dropdown => dropdown.remove());
         }
-
-        function updateTotals() {
-            let totalDebit = 0;
-            let totalCredit = 0;
-            const rows = document.querySelectorAll('table tbody tr:not(.total-row)');
-            rows.forEach(row => {
-                const debitCell = row.querySelector('.debit-amount');
-                const creditCell = row.querySelector('.credit-amount');
-                totalDebit += parseFloat(debitCell.textContent) || 0;
-                totalCredit += parseFloat(creditCell.textContent) || 0;
-            });
-            document.getElementById('totalDebit').textContent = totalDebit.toFixed(2);
-            document.getElementById('totalCredit').textContent = totalCredit.toFixed(2);
-        }
-
 
         // Function to show account dropdown
         function showDropdown(element) {
@@ -489,77 +422,77 @@ WHERE
         }
 
         // Function to show entity dropdown
-        /* function showDropdownEnt(element) {
-             // Only proceed if this is the second column
-             if (element.cellIndex !== 2) return;
-             if (element.querySelector('.entity-dropdown')) return;
+        function showDropdownEnt(element) {
+            // Only proceed if this is the second column
+            if (element.cellIndex !== 2) return;
+            if (element.querySelector('.entity-dropdown')) return;
 
-             // Create a dropdown element
-             const dropdown = document.createElement('select');
-             dropdown.className = 'entity-dropdown';
+            // Create a dropdown element
+            const dropdown = document.createElement('select');
+            dropdown.className = 'entity-dropdown';
 
-             // Add a loading option
-             dropdown.innerHTML = '<option>Loading...</option>';
+            // Add a loading option
+            dropdown.innerHTML = '<option>Loading...</option>';
 
-             // Insert the dropdown into the cell
-             const originalContent = element.innerHTML;
-             element.innerHTML = '';
-             element.appendChild(dropdown);
+            // Insert the dropdown into the cell
+            const originalContent = element.innerHTML;
+            element.innerHTML = '';
+            element.appendChild(dropdown);
 
-             // Fetch data from PHP using AJAX
-             fetch('get_entities.php')
-                 .then(response => response.text())
-                 .then(text => {
-                     try {
-                         const data = JSON.parse(text);
+            // Fetch data from PHP using AJAX
+            fetch('get_entities.php')
+                .then(response => response.text())
+                .then(text => {
+                    try {
+                        const data = JSON.parse(text);
 
-                         // Clear the dropdown
-                         dropdown.innerHTML = '';
+                        // Clear the dropdown
+                        dropdown.innerHTML = '';
 
-                         // Add a default option
-                         const defaultOption = document.createElement('option');
-                         defaultOption.text = 'Select an entity';
-                         defaultOption.value = '';
-                         dropdown.add(defaultOption);
+                        // Add a default option
+                        const defaultOption = document.createElement('option');
+                        defaultOption.text = 'Select an entity';
+                        defaultOption.value = '';
+                        dropdown.add(defaultOption);
 
-                         const nullOption = document.createElement('option');
-                         nullOption.text = '-';
-                         nullOption.value = null;
-                         dropdown.add(nullOption);
+                        const nullOption = document.createElement('option');
+                        nullOption.text = '-';
+                        nullOption.value = null;
+                        dropdown.add(nullOption);
 
-                         // Add options from the fetched data
-                         data.forEach(entity => {
-                             const option = document.createElement('option');
-                             option.text = entity.name;
-                             option.value = entity.Eid;
-                             dropdown.add(option);
-                         });
-                     } catch (e) {
-                         console.error('Error parsing JSON:', e);
-                         throw new Error('Invalid JSON response');
-                     }
-                 })
-                 .catch(error => {
-                     console.error('Error fetching entities:', error);
-                     element.innerHTML = 'Error loading entities';
-                 });
+                        // Add options from the fetched data
+                        data.forEach(entity => {
+                            const option = document.createElement('option');
+                            option.text = entity.name;
+                            option.value = entity.Eid;
+                            dropdown.add(option);
+                        });
+                    } catch (e) {
+                        console.error('Error parsing JSON:', e);
+                        throw new Error('Invalid JSON response');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching entities:', error);
+                    element.innerHTML = 'Error loading entities';
+                });
 
-             // Handle selection
-             dropdown.addEventListener('change', function() {
-                 element.innerHTML = this.options[this.selectedIndex].text;
-                 element.dataset.EntityId = this.value;
-             });
+            // Handle selection
+            dropdown.addEventListener('change', function() {
+                element.innerHTML = this.options[this.selectedIndex].text;
+                element.dataset.EntityId = this.value;
+            });
 
-             // Handle click outside
-             document.addEventListener('click', function closeDropdown(e) {
-                 if (!element.contains(e.target)) {
-                     if (dropdown.value === '') {
-                         element.innerHTML = originalContent;
-                     }
-                     document.removeEventListener('click', closeDropdown);
-                 }
-             });
-         }*/
+            // Handle click outside
+            document.addEventListener('click', function closeDropdown(e) {
+                if (!element.contains(e.target)) {
+                    if (dropdown.value === '') {
+                        element.innerHTML = originalContent;
+                    }
+                    document.removeEventListener('click', closeDropdown);
+                }
+            });
+        }
 
         // Toggle edit mode
 
@@ -572,27 +505,13 @@ WHERE
             let totalDebit = 0;
             let totalCredit = 0;
             let valid = true;
-            const entryIdElement = document.getElementById("entryId");
-            if (!entryIdElement) {
-                console.error("Entry ID element not found");
-                return;
-            }
 
-            // Extract the text content, which will be something like "Entry No. 123"
-            const entryIdText = entryIdElement.textContent;
-            const entryIdMatch = entryIdText.match(/\d+/);
-            if (!entryIdMatch) {
-                console.error("Could not extract Entry ID from:", entryIdText);
-                return;
-            }
-            const entryId = entryIdMatch[0];
-
-            document.querySelectorAll('table tbody tr:not(.total-row)').forEach(row => {
+            document.querySelectorAll('table tbody tr').forEach(row => {
                 const urlParams = new URLSearchParams(window.location.search);
                 const entryID = urlParams.get('EntryID');
-                const label = row.cells[2].textContent.trim();
-                const debit = parseFloat(row.cells[3].textContent.trim()) || 0;
-                const credit = parseFloat(row.cells[4].textContent.trim()) || 0;
+                const label = row.cells[3].textContent.trim();
+                const debit = parseFloat(row.cells[4].textContent.trim()) || 0;
+                const credit = parseFloat(row.cells[5].textContent.trim()) || 0;
 
                 if (!label) {
                     alert('Label field cannot be empty.');
@@ -607,7 +526,7 @@ WHERE
                     entryID: entryID,
                     lineId: row.cells[0].textContent.trim(),
                     account: row.cells[1].textContent.trim().split(' - ')[0],
-                    //entity: row.cells[2].textContent.trim().split(' - ')[0] === '-' ? null : row.cells[2].textContent.trim().split(' - ')[0],
+                    entity: row.cells[2].textContent.trim().split(' - ')[0] === '-' ? null : row.cells[2].textContent.trim().split(' - ')[0],
                     label: label,
                     debit: debit,
                     credit: credit
@@ -654,7 +573,7 @@ WHERE
 
 
         let editMode = false;
-        document.querySelector('#edit').addEventListener('click', function() {
+        document.querySelector('.filter-buttons button').addEventListener('click', function() {
             editMode = !editMode;
             if (editMode) {
                 this.textContent = 'Save';
@@ -677,18 +596,13 @@ WHERE
         outline: 2px solid #007bff;
         background-color: #ffffff;
     }
-    .account-dropdown{
+    .account-dropdown, .entity-dropdown {
         width: 100%;
         padding: 2px;
     }
 `;
         document.head.appendChild(style);
     </script>
-
-
-    <script src="JrnlEditInsert.js"> </script>
-    <script src="JrnlEditDelete.js"></script>
-    <script src="Jrnl_desc_change.js"></script>
 </body>
 
 </html>
